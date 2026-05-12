@@ -60,6 +60,147 @@ records as attributes.
 When Kaloricke Tabulky starts returning another numeric metric with a clear
 unit, the integration can expose it as an additional dynamic sensor.
 
+### Lovelace nutrient card example
+
+The Kaloricke Tabulky web app does not use one universal color rule for every
+nutrient. For example, low sugar can be good, while low fiber is not. This
+example uses the same tolerance model as the web diary gauges:
+
+- orange: below the green range.
+- green: inside the metric-specific target range.
+- red: above the green range.
+
+Replace the entity IDs with your own sensor IDs.
+Set `KT_MODE` to match the diary summary mode returned by Kaloricke Tabulky.
+The example uses `1`, which is the mode seen in the captured demo payload.
+
+```yaml
+type: custom:button-card
+entity: sensor.tom_protein_2
+show_name: false
+show_icon: false
+show_state: false
+show_label: true
+label: |
+  [[[
+    const NUTRIENTS = [
+      { label: 'Protein',       entity: 'sensor.tom_protein_2',     key: 'protein' },
+      { label: 'Carbohydrates', entity: 'sensor.tom_carbohydrates', key: 'carbohydrate' },
+      { label: 'Fat',           entity: 'sensor.tom_fat',           key: 'fat' },
+      { label: 'Fiber',         entity: 'sensor.tom_fiber',         key: 'fiber' },
+      { label: 'Sugar',         entity: 'sensor.tom_sugar',         key: 'sugar' },
+      { label: 'Salt',          entity: 'sensor.tom_salt',          key: 'salt' },
+    ];
+
+    const KT_MODE = 1;
+
+    const THRESHOLDS = {
+      0: {
+        protein:      { low: 20,  high: 20 },
+        carbohydrate: { low: 20,  high: 20 },
+        fat:          { low: 20,  high: 20 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 10 },
+        salt:         { low: 40,  high: 80 },
+      },
+      1: {
+        protein:      { low: 10,  high: 20 },
+        carbohydrate: { low: 30,  high: 15 },
+        fat:          { low: 30,  high: 15 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 15 },
+        salt:         { low: 40,  high: 80 },
+      },
+      2: {
+        protein:      { low: 20,  high: 30 },
+        carbohydrate: { low: 20,  high: 30 },
+        fat:          { low: 30,  high: 20 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 20 },
+        salt:         { low: 40,  high: 80 },
+      },
+    };
+
+    function parseKtNumber(value) {
+      if (typeof value === 'number') return value;
+      if (typeof value !== 'string') return NaN;
+      return Number(value.replace(/\s/g, '').replace(',', '.'));
+    }
+
+    function percent(state) {
+      const attrPercent = parseKtNumber(state.attributes.percent);
+      if (Number.isFinite(attrPercent)) return Math.round(attrPercent);
+
+      const value = parseKtNumber(state.state);
+      const goal = parseKtNumber(state.attributes.goal);
+      return Number.isFinite(goal) && goal > 0 ? Math.round((value / goal) * 100) : NaN;
+    }
+
+    function color(pct, key) {
+      if (!Number.isFinite(pct)) return '#FF8040';
+      const t = (THRESHOLDS[KT_MODE] || THRESHOLDS[0])[key] || { low: 20, high: 20 };
+      if (pct < 100 - t.low) return '#FF8040';
+      if (pct > 100 + t.high) return '#DD4B39';
+      return '#99cc33';
+    }
+
+    function ring(pct, key, size) {
+      const r = 34;
+      const circ = 2 * Math.PI * r;
+      const p = Number.isFinite(pct) ? Math.min(Math.max(pct, 0), 100) : 0;
+      const dash = (p / 100) * circ;
+      const c = color(pct, key);
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#e0e3e5" stroke-width="7"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${c}" stroke-width="7"
+          stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
+          transform="rotate(-90 ${size / 2} ${size / 2})"/>
+        <text x="50%" y="55%" text-anchor="middle" fill="${c}" font-size="13" font-weight="bold">
+          ${Number.isFinite(pct) ? pct + '%' : '?'}
+        </text>
+      </svg>`;
+    }
+
+    function tile(item) {
+      const s = states[item.entity];
+      if (!s) {
+        return `<div style="width:33%;text-align:center;color:#e53935;padding:4px;font-size:11px">${item.label}<br>not found</div>`;
+      }
+      const value = parseKtNumber(s.state);
+      const goal = parseKtNumber(s.attributes.goal);
+      const pct = percent(s);
+      const c = color(pct, item.key);
+      const unit = s.attributes.unit_of_measurement || 'g';
+      const fmt = v => Number.isFinite(v) ? (v % 1 === 0 ? v : v.toFixed(1)) : '?';
+      return `<div style="width:33%;display:flex;flex-direction:column;align-items:center;padding:6px 0">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">${item.label}</div>
+        <div style="color:${c};font-size:17px;font-weight:700;margin-bottom:2px">${fmt(value)} ${unit}</div>
+        ${ring(pct, item.key, 88)}
+        <div style="font-size:11px;color:#777;margin-top:2px">of ${fmt(goal)} ${unit}</div>
+      </div>`;
+    }
+
+    const top = NUTRIENTS.slice(0, 3).map(tile).join('');
+    const bottom = NUTRIENTS.slice(3).map(tile).join('');
+    return `
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #333">Nutrients</div>
+      <div style="display:flex">${top}</div>
+      <div style="display:flex;margin-top:4px">${bottom}</div>
+    `;
+  ]]]
+styles:
+  card:
+    - background: "#1c1c1e"
+    - border-radius: 16px
+    - padding: 16px
+    - color: white
+    - font-family: sans-serif
+  label:
+    - width: 100%
+    - text-align: left
+    - padding: 0
+```
+
 ### Installation
 
 #### HACS custom repository
@@ -171,6 +312,148 @@ měsíční záznamy váhy.
 
 Když Kalorické Tabulky začnou vracet další číselnou hodnotu s jasnou jednotkou,
 integrace ji může zobrazit jako další dynamický senzor.
+
+### Příklad Lovelace karty pro nutrienty
+
+Web Kalorických Tabulek nepoužívá jedno univerzální pravidlo barvy pro všechny
+nutrienty. Například nízké cukry můžou být v pořádku, ale nízká vláknina ne.
+Tento příklad používá stejný toleranční model jako webové kruhové grafy v
+deníku:
+
+- oranžová: pod zeleným rozsahem.
+- zelená: v cílovém rozsahu konkrétní metriky.
+- červená: nad zeleným rozsahem.
+
+Entity ID si nahraď podle svých senzorů.
+`KT_MODE` nastav podle hodnoty `mode`, kterou vrací denní souhrn Kalorických
+Tabulek. Příklad používá `1`, protože tuhle hodnotu měl zachycený demo payload.
+
+```yaml
+type: custom:button-card
+entity: sensor.tom_protein_2
+show_name: false
+show_icon: false
+show_state: false
+show_label: true
+label: |
+  [[[
+    const NUTRIENTS = [
+      { label: 'Bílkoviny', entity: 'sensor.tom_protein_2',     key: 'protein' },
+      { label: 'Sacharidy', entity: 'sensor.tom_carbohydrates', key: 'carbohydrate' },
+      { label: 'Tuky',      entity: 'sensor.tom_fat',           key: 'fat' },
+      { label: 'Vláknina',  entity: 'sensor.tom_fiber',         key: 'fiber' },
+      { label: 'Cukry',     entity: 'sensor.tom_sugar',         key: 'sugar' },
+      { label: 'Sůl',       entity: 'sensor.tom_salt',          key: 'salt' },
+    ];
+
+    const KT_MODE = 1;
+
+    const THRESHOLDS = {
+      0: {
+        protein:      { low: 20,  high: 20 },
+        carbohydrate: { low: 20,  high: 20 },
+        fat:          { low: 20,  high: 20 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 10 },
+        salt:         { low: 40,  high: 80 },
+      },
+      1: {
+        protein:      { low: 10,  high: 20 },
+        carbohydrate: { low: 30,  high: 15 },
+        fat:          { low: 30,  high: 15 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 15 },
+        salt:         { low: 40,  high: 80 },
+      },
+      2: {
+        protein:      { low: 20,  high: 30 },
+        carbohydrate: { low: 20,  high: 30 },
+        fat:          { low: 30,  high: 20 },
+        fiber:        { low: 20,  high: 30 },
+        sugar:        { low: 100, high: 20 },
+        salt:         { low: 40,  high: 80 },
+      },
+    };
+
+    function parseKtNumber(value) {
+      if (typeof value === 'number') return value;
+      if (typeof value !== 'string') return NaN;
+      return Number(value.replace(/\s/g, '').replace(',', '.'));
+    }
+
+    function percent(state) {
+      const attrPercent = parseKtNumber(state.attributes.percent);
+      if (Number.isFinite(attrPercent)) return Math.round(attrPercent);
+
+      const value = parseKtNumber(state.state);
+      const goal = parseKtNumber(state.attributes.goal);
+      return Number.isFinite(goal) && goal > 0 ? Math.round((value / goal) * 100) : NaN;
+    }
+
+    function color(pct, key) {
+      if (!Number.isFinite(pct)) return '#FF8040';
+      const t = (THRESHOLDS[KT_MODE] || THRESHOLDS[0])[key] || { low: 20, high: 20 };
+      if (pct < 100 - t.low) return '#FF8040';
+      if (pct > 100 + t.high) return '#DD4B39';
+      return '#99cc33';
+    }
+
+    function ring(pct, key, size) {
+      const r = 34;
+      const circ = 2 * Math.PI * r;
+      const p = Number.isFinite(pct) ? Math.min(Math.max(pct, 0), 100) : 0;
+      const dash = (p / 100) * circ;
+      const c = color(pct, key);
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#e0e3e5" stroke-width="7"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${c}" stroke-width="7"
+          stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
+          transform="rotate(-90 ${size / 2} ${size / 2})"/>
+        <text x="50%" y="55%" text-anchor="middle" fill="${c}" font-size="13" font-weight="bold">
+          ${Number.isFinite(pct) ? pct + '%' : '?'}
+        </text>
+      </svg>`;
+    }
+
+    function tile(item) {
+      const s = states[item.entity];
+      if (!s) {
+        return `<div style="width:33%;text-align:center;color:#e53935;padding:4px;font-size:11px">${item.label}<br>nenalezeno</div>`;
+      }
+      const value = parseKtNumber(s.state);
+      const goal = parseKtNumber(s.attributes.goal);
+      const pct = percent(s);
+      const c = color(pct, item.key);
+      const unit = s.attributes.unit_of_measurement || 'g';
+      const fmt = v => Number.isFinite(v) ? (v % 1 === 0 ? v : v.toFixed(1)) : '?';
+      return `<div style="width:33%;display:flex;flex-direction:column;align-items:center;padding:6px 0">
+        <div style="font-weight:600;font-size:13px;margin-bottom:2px">${item.label}</div>
+        <div style="color:${c};font-size:17px;font-weight:700;margin-bottom:2px">${fmt(value)} ${unit}</div>
+        ${ring(pct, item.key, 88)}
+        <div style="font-size:11px;color:#777;margin-top:2px">z ${fmt(goal)} ${unit}</div>
+      </div>`;
+    }
+
+    const top = NUTRIENTS.slice(0, 3).map(tile).join('');
+    const bottom = NUTRIENTS.slice(3).map(tile).join('');
+    return `
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #333">Nutrienty</div>
+      <div style="display:flex">${top}</div>
+      <div style="display:flex;margin-top:4px">${bottom}</div>
+    `;
+  ]]]
+styles:
+  card:
+    - background: "#1c1c1e"
+    - border-radius: 16px
+    - padding: 16px
+    - color: white
+    - font-family: sans-serif
+  label:
+    - width: 100%
+    - text-align: left
+    - padding: 0
+```
 
 ### Instalace
 
