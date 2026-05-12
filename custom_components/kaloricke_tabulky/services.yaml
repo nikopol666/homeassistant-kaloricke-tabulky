@@ -1,0 +1,28 @@
+record_weight:
+  name: Record weight
+  description: Record a body weight value in Kaloricke Tabulky.
+  fields:
+    config_entry_id:
+      name: Config entry ID
+      description: Optional account entry ID. Required only when multiple accounts are configured.
+      required: false
+      selector:
+        text:
+    weight:
+      name: Weight
+      description: Body weight in kilograms.
+      required: true
+      example: 75.5
+      selector:
+        number:
+          min: 1
+          max: 400
+          step: 0.1
+          unit_of_measurement: kg
+          mode: box
+    date:
+      name: Date
+      description: Optional date for the recorded weight. Defaults to today. Accepts YYYY-MM-DD or DD.MM.YYYY.
+      required: false
+      selector:
+        date:

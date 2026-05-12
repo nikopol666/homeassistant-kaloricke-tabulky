@@ -1,0 +1,195 @@
+{
+  "title": "Kaloricke Tabulky",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Kaloricke Tabulky",
+        "description": "Enter your Kaloricke Tabulky credentials. The password is used only to sign in and create a session cookie.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Kaloricke Tabulky.",
+      "invalid_auth": "Invalid email or password."
+    },
+    "abort": {
+      "already_configured": "This Kaloricke Tabulky account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kaloricke Tabulky options",
+        "description": "Set how often Home Assistant should refresh sensors. The default is 240 minutes because the API is unofficial and body weight usually changes slowly.",
+        "data": {
+          "scan_interval": "Sensor refresh interval in minutes"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_weight": {
+        "name": "Latest weight"
+      },
+      "bilkoviny": {
+        "name": "Protein"
+      },
+      "activity_energy_total": {
+        "name": "Activity energy"
+      },
+      "activity_level_energy": {
+        "name": "Activity level energy"
+      },
+      "basal_metabolism": {
+        "name": "Basal metabolism"
+      },
+      "body_weight": {
+        "name": "Body weight"
+      },
+      "calorie": {
+        "name": "Energy"
+      },
+      "calories": {
+        "name": "Energy"
+      },
+      "carbohydrate": {
+        "name": "Carbohydrates"
+      },
+      "carbohydrates": {
+        "name": "Carbohydrates"
+      },
+      "carbs": {
+        "name": "Carbohydrates"
+      },
+      "cukry": {
+        "name": "Sugar"
+      },
+      "energy": {
+        "name": "Energy"
+      },
+      "energy_deficit": {
+        "name": "Energy deficit"
+      },
+      "energy_kcal": {
+        "name": "Energy"
+      },
+      "energy_intake_maintenance": {
+        "name": "Maintenance intake"
+      },
+      "energy_intake_rest": {
+        "name": "Energy remaining"
+      },
+      "energy_output_total": {
+        "name": "Energy output total"
+      },
+      "energy_target": {
+        "name": "Energy target"
+      },
+      "energykcal": {
+        "name": "Energy"
+      },
+      "energie": {
+        "name": "Energy"
+      },
+      "energeticka_hodnota": {
+        "name": "Energy"
+      },
+      "fat": {
+        "name": "Fat"
+      },
+      "fats": {
+        "name": "Fat"
+      },
+      "fiber": {
+        "name": "Fiber"
+      },
+      "fibre": {
+        "name": "Fiber"
+      },
+      "kcal": {
+        "name": "Energy"
+      },
+      "kj": {
+        "name": "Energy"
+      },
+      "mastne_kyseliny_nasycene": {
+        "name": "Saturated fat"
+      },
+      "nasycene_mastne_kyseliny": {
+        "name": "Saturated fat"
+      },
+      "pitny_rezim": {
+        "name": "Water"
+      },
+      "protein": {
+        "name": "Protein"
+      },
+      "proteins": {
+        "name": "Protein"
+      },
+      "sacharidy": {
+        "name": "Carbohydrates"
+      },
+      "salt": {
+        "name": "Salt"
+      },
+      "saturated_fat": {
+        "name": "Saturated fat"
+      },
+      "sugars": {
+        "name": "Sugar"
+      },
+      "sugar": {
+        "name": "Sugar"
+      },
+      "total": {
+        "name": "Energy"
+      },
+      "sul": {
+        "name": "Salt"
+      },
+      "tuky": {
+        "name": "Fat"
+      },
+      "vlaknina": {
+        "name": "Fiber"
+      },
+      "voda": {
+        "name": "Water"
+      },
+      "water": {
+        "name": "Water"
+      },
+      "weight": {
+        "name": "Body weight"
+      },
+      "z_toho_cukry": {
+        "name": "Sugar"
+      }
+    }
+  },
+  "services": {
+    "record_weight": {
+      "name": "Record weight",
+      "description": "Record a body weight value in Kaloricke Tabulky.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry ID",
+          "description": "Optional account entry ID. Required only when multiple accounts are configured."
+        },
+        "weight": {
+          "name": "Weight",
+          "description": "Body weight in kilograms."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Optional date for the recorded weight. Defaults to today. Accepts YYYY-MM-DD or DD.MM.YYYY."
+        }
+      }
+    }
+  }
+}

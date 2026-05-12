@@ -1,0 +1,63 @@
+{
+  "services": {
+    "record_weight": "mdi:scale-bathroom"
+  },
+  "entity": {
+    "sensor": {
+      "activity_energy_total": {
+        "default": "mdi:run"
+      },
+      "activity_level_energy": {
+        "default": "mdi:seat"
+      },
+      "basal_metabolism": {
+        "default": "mdi:fire"
+      },
+      "body_weight": {
+        "default": "mdi:scale-bathroom"
+      },
+      "carbohydrates": {
+        "default": "mdi:barley"
+      },
+      "energy": {
+        "default": "mdi:lightning-bolt"
+      },
+      "energy_deficit": {
+        "default": "mdi:chart-line-variant"
+      },
+      "energy_intake_maintenance": {
+        "default": "mdi:target"
+      },
+      "energy_intake_rest": {
+        "default": "mdi:counter"
+      },
+      "energy_output_total": {
+        "default": "mdi:fire-circle"
+      },
+      "energy_target": {
+        "default": "mdi:bullseye-arrow"
+      },
+      "fat": {
+        "default": "mdi:oil"
+      },
+      "fiber": {
+        "default": "mdi:leaf"
+      },
+      "latest_weight": {
+        "default": "mdi:scale-bathroom"
+      },
+      "protein": {
+        "default": "mdi:food-steak"
+      },
+      "salt": {
+        "default": "mdi:shaker"
+      },
+      "sugar": {
+        "default": "mdi:cube"
+      },
+      "water": {
+        "default": "mdi:cup-water"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Home Assistant local files
+.storage/
+home-assistant.log*
+home-assistant_v2.db*

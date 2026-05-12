@@ -1,0 +1,195 @@
+{
+  "title": "Kalorické Tabulky",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Připojit Kalorické Tabulky",
+        "description": "Zadej přihlašovací údaje do Kalorických Tabulek. Heslo se použije jen pro přihlášení a vytvoření session cookie.",
+        "data": {
+          "email": "E-mail",
+          "password": "Heslo"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit ke Kalorickým Tabulkám.",
+      "invalid_auth": "Neplatný e-mail nebo heslo."
+    },
+    "abort": {
+      "already_configured": "Tento účet Kalorických Tabulek už je nastavený."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nastavení Kalorických Tabulek",
+        "description": "Nastav, jak často má Home Assistant obnovovat senzory. Výchozí hodnota je 240 minut, protože API je neoficiální a tělesná váha se obvykle nemění často.",
+        "data": {
+          "scan_interval": "Interval obnovy senzorů v minutách"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_weight": {
+        "name": "Poslední váha"
+      },
+      "bilkoviny": {
+        "name": "Bílkoviny"
+      },
+      "activity_energy_total": {
+        "name": "Energie z aktivit"
+      },
+      "activity_level_energy": {
+        "name": "Energie z denního režimu"
+      },
+      "basal_metabolism": {
+        "name": "Bazální metabolismus"
+      },
+      "body_weight": {
+        "name": "Tělesná hmotnost"
+      },
+      "calorie": {
+        "name": "Energie"
+      },
+      "calories": {
+        "name": "Energie"
+      },
+      "carbohydrate": {
+        "name": "Sacharidy"
+      },
+      "carbohydrates": {
+        "name": "Sacharidy"
+      },
+      "carbs": {
+        "name": "Sacharidy"
+      },
+      "cukry": {
+        "name": "Cukry"
+      },
+      "energy": {
+        "name": "Energie"
+      },
+      "energy_deficit": {
+        "name": "Energetický deficit"
+      },
+      "energy_kcal": {
+        "name": "Energie"
+      },
+      "energy_intake_maintenance": {
+        "name": "Udržovací příjem"
+      },
+      "energy_intake_rest": {
+        "name": "Zbývající energie"
+      },
+      "energy_output_total": {
+        "name": "Celkový energetický výdej"
+      },
+      "energy_target": {
+        "name": "Energetický cíl"
+      },
+      "energykcal": {
+        "name": "Energie"
+      },
+      "energie": {
+        "name": "Energie"
+      },
+      "energeticka_hodnota": {
+        "name": "Energie"
+      },
+      "fat": {
+        "name": "Tuky"
+      },
+      "fats": {
+        "name": "Tuky"
+      },
+      "fiber": {
+        "name": "Vláknina"
+      },
+      "fibre": {
+        "name": "Vláknina"
+      },
+      "kcal": {
+        "name": "Energie"
+      },
+      "kj": {
+        "name": "Energie"
+      },
+      "mastne_kyseliny_nasycene": {
+        "name": "Nasycené mastné kyseliny"
+      },
+      "nasycene_mastne_kyseliny": {
+        "name": "Nasycené mastné kyseliny"
+      },
+      "pitny_rezim": {
+        "name": "Voda"
+      },
+      "protein": {
+        "name": "Bílkoviny"
+      },
+      "proteins": {
+        "name": "Bílkoviny"
+      },
+      "sacharidy": {
+        "name": "Sacharidy"
+      },
+      "salt": {
+        "name": "Sůl"
+      },
+      "saturated_fat": {
+        "name": "Nasycené mastné kyseliny"
+      },
+      "sugars": {
+        "name": "Cukry"
+      },
+      "sugar": {
+        "name": "Cukry"
+      },
+      "total": {
+        "name": "Energie"
+      },
+      "sul": {
+        "name": "Sůl"
+      },
+      "tuky": {
+        "name": "Tuky"
+      },
+      "vlaknina": {
+        "name": "Vláknina"
+      },
+      "voda": {
+        "name": "Voda"
+      },
+      "water": {
+        "name": "Voda"
+      },
+      "weight": {
+        "name": "Tělesná hmotnost"
+      },
+      "z_toho_cukry": {
+        "name": "Cukry"
+      }
+    }
+  },
+  "services": {
+    "record_weight": {
+      "name": "Zapsat váhu",
+      "description": "Zapíše hodnotu tělesné váhy do Kalorických Tabulek.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ID nastavení integrace",
+          "description": "Volitelné ID účtu. Je potřeba jen v případě, že je nastaveno více účtů."
+        },
+        "weight": {
+          "name": "Váha",
+          "description": "Tělesná váha v kilogramech."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Volitelné datum záznamu váhy. Výchozí je dnešek. Podporuje YYYY-MM-DD nebo DD.MM.YYYY."
+        }
+      }
+    }
+  }
+}
