@@ -69,6 +69,8 @@ endpoint and fills missing nutrient totals from food rows when possible.
 
 ### Lovelace nutrient card example
 
+![Lovelace nutrient card example](docs/images/lovelace-nutrients-card.webp)
+
 The Kaloricke Tabulky web app does not use one universal color rule for every
 nutrient. For example, low sugar can be good, while low fiber is not. This
 example uses the same tolerance model as the web diary gauges:
@@ -210,6 +212,8 @@ styles:
 ```
 
 ### Lovelace energy card example
+
+![Lovelace energy card example](docs/images/lovelace-energy-card.webp)
 
 The total energy gauge uses a different threshold model than nutrient gauges.
 Kaloricke Tabulky uses green `85-115%` for stay fit and weight loss modes, and
@@ -501,6 +505,8 @@ nutrientů z jednotlivých zapsaných potravin.
 
 ### Příklad Lovelace karty pro nutrienty
 
+![Příklad Lovelace karty pro nutrienty](docs/images/lovelace-nutrients-card.webp)
+
 Web Kalorických Tabulek nepoužívá jedno univerzální pravidlo barvy pro všechny
 nutrienty. Například nízké cukry můžou být v pořádku, ale nízká vláknina ne.
 Tento příklad používá stejný toleranční model jako webové kruhové grafy v
@@ -643,6 +649,8 @@ styles:
 ```
 
 ### Příklad Lovelace karty pro energii
+
+![Příklad Lovelace karty pro energii](docs/images/lovelace-energy-card.webp)
 
 Celková energie používá jiné prahy než nutrienty. Kalorické Tabulky používají
 zelený rozsah `85-115 %` pro režimy být fit a hubnutí, a zelený rozsah
