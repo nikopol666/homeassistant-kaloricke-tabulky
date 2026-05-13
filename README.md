@@ -83,7 +83,7 @@ The example uses `1`, which is the mode seen in the captured demo payload.
 
 ```yaml
 type: custom:button-card
-entity: sensor.tom_protein_2
+entity: sensor.kaloricke_tabulky_protein
 show_name: false
 show_icon: false
 show_state: false
@@ -91,12 +91,12 @@ show_label: true
 label: |
   [[[
     const NUTRIENTS = [
-      { label: 'Protein',       entity: 'sensor.tom_protein_2',     key: 'protein' },
-      { label: 'Carbohydrates', entity: 'sensor.tom_carbohydrates', key: 'carbohydrate' },
-      { label: 'Fat',           entity: 'sensor.tom_fat',           key: 'fat' },
-      { label: 'Fiber',         entity: 'sensor.tom_fiber',         key: 'fiber' },
-      { label: 'Sugar',         entity: 'sensor.tom_sugar',         key: 'sugar' },
-      { label: 'Salt',          entity: 'sensor.tom_salt',          key: 'salt' },
+      { label: 'Protein',       entity: 'sensor.kaloricke_tabulky_protein',       key: 'protein' },
+      { label: 'Carbohydrates', entity: 'sensor.kaloricke_tabulky_carbohydrates', key: 'carbohydrate' },
+      { label: 'Fat',           entity: 'sensor.kaloricke_tabulky_fat',           key: 'fat' },
+      { label: 'Fiber',         entity: 'sensor.kaloricke_tabulky_fiber',         key: 'fiber' },
+      { label: 'Sugar',         entity: 'sensor.kaloricke_tabulky_sugar',         key: 'sugar' },
+      { label: 'Salt',          entity: 'sensor.kaloricke_tabulky_salt',          key: 'salt' },
     ];
 
     const KT_MODE = 1;
@@ -158,7 +158,7 @@ label: |
       const dash = (p / 100) * circ;
       const c = color(pct, key);
       return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#e0e3e5" stroke-width="7"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#333" stroke-width="7"/>
         <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${c}" stroke-width="7"
           stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
           transform="rotate(-90 ${size / 2} ${size / 2})"/>
@@ -408,7 +408,7 @@ Tabulek. Příklad používá `1`, protože tuhle hodnotu měl zachycený demo p
 
 ```yaml
 type: custom:button-card
-entity: sensor.tom_protein_2
+entity: sensor.kaloricke_tabulky_protein
 show_name: false
 show_icon: false
 show_state: false
@@ -416,12 +416,12 @@ show_label: true
 label: |
   [[[
     const NUTRIENTS = [
-      { label: 'Bílkoviny', entity: 'sensor.tom_protein_2',     key: 'protein' },
-      { label: 'Sacharidy', entity: 'sensor.tom_carbohydrates', key: 'carbohydrate' },
-      { label: 'Tuky',      entity: 'sensor.tom_fat',           key: 'fat' },
-      { label: 'Vláknina',  entity: 'sensor.tom_fiber',         key: 'fiber' },
-      { label: 'Cukry',     entity: 'sensor.tom_sugar',         key: 'sugar' },
-      { label: 'Sůl',       entity: 'sensor.tom_salt',          key: 'salt' },
+      { label: 'Bílkoviny', entity: 'sensor.kaloricke_tabulky_protein',       key: 'protein' },
+      { label: 'Sacharidy', entity: 'sensor.kaloricke_tabulky_carbohydrates', key: 'carbohydrate' },
+      { label: 'Tuky',      entity: 'sensor.kaloricke_tabulky_fat',           key: 'fat' },
+      { label: 'Vláknina',  entity: 'sensor.kaloricke_tabulky_fiber',         key: 'fiber' },
+      { label: 'Cukry',     entity: 'sensor.kaloricke_tabulky_sugar',         key: 'sugar' },
+      { label: 'Sůl',       entity: 'sensor.kaloricke_tabulky_salt',          key: 'salt' },
     ];
 
     const KT_MODE = 1;
@@ -483,7 +483,7 @@ label: |
       const dash = (p / 100) * circ;
       const c = color(pct, key);
       return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#e0e3e5" stroke-width="7"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#333" stroke-width="7"/>
         <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${c}" stroke-width="7"
           stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
           transform="rotate(-90 ${size / 2} ${size / 2})"/>
