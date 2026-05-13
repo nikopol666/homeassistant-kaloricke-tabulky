@@ -79,7 +79,8 @@ example uses the same tolerance model as the web diary gauges:
 
 Replace the entity IDs with your own sensor IDs.
 Set `KT_MODE` to match the diary summary mode returned by Kaloricke Tabulky.
-The example uses `1`, which is the mode seen in the captured demo payload.
+Known modes are `0` for stay fit, `1` for weight loss and `2` for muscle gain.
+The example uses `0`, which matches the stay fit goal.
 
 ```yaml
 type: custom:button-card
@@ -99,7 +100,7 @@ label: |
       { label: 'Salt',          entity: 'sensor.kaloricke_tabulky_salt',          key: 'salt' },
     ];
 
-    const KT_MODE = 1;
+    const KT_MODE = 0;
 
     const THRESHOLDS = {
       0: {
@@ -404,7 +405,8 @@ deníku:
 
 Entity ID si nahraď podle svých senzorů.
 `KT_MODE` nastav podle hodnoty `mode`, kterou vrací denní souhrn Kalorických
-Tabulek. Příklad používá `1`, protože tuhle hodnotu měl zachycený demo payload.
+Tabulek. Známé režimy jsou `0` pro být fit, `1` pro hubnutí a `2` pro nabírání.
+Příklad používá `0`, což odpovídá cíli být fit.
 
 ```yaml
 type: custom:button-card
@@ -424,7 +426,7 @@ label: |
       { label: 'Sůl',       entity: 'sensor.kaloricke_tabulky_salt',          key: 'salt' },
     ];
 
-    const KT_MODE = 1;
+    const KT_MODE = 0;
 
     const THRESHOLDS = {
       0: {
