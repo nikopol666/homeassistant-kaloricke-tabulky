@@ -405,7 +405,7 @@ deníku:
 
 Entity ID si nahraď podle svých senzorů.
 `KT_MODE` nastav podle hodnoty `mode`, kterou vrací denní souhrn Kalorických
-Tabulek. Známé režimy jsou `0` pro být fit, `1` pro hubnutí a `2` pro nabírání.
+Tabulek. Známé režimy jsou `0` pro být fit, `1` pro hubnutí a `2` pro nabrat svaly.
 Příklad používá `0`, což odpovídá cíli být fit.
 
 ```yaml
