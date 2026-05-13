@@ -4,6 +4,25 @@
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nikopol666&repository=homeassistant-kaloricke-tabulky&category=integration)
 
+## Contents / Obsah
+
+- [English](#english)
+  - [What it does](#what-it-does)
+  - [Sensors](#sensors)
+  - [Lovelace nutrient card example](#lovelace-nutrient-card-example)
+  - [Lovelace energy card example](#lovelace-energy-card-example)
+  - [Installation](#installation)
+  - [Actions](#actions)
+  - [Notes](#notes)
+- [Česky](#česky)
+  - [Co integrace umí](#co-integrace-umí)
+  - [Senzory](#senzory)
+  - [Příklad Lovelace karty pro nutrienty](#příklad-lovelace-karty-pro-nutrienty)
+  - [Příklad Lovelace karty pro energii](#příklad-lovelace-karty-pro-energii)
+  - [Instalace](#instalace)
+  - [Akce](#akce)
+  - [Poznámky](#poznámky)
+
 ## English
 
 Home Assistant custom integration for Kaloricke Tabulky.
