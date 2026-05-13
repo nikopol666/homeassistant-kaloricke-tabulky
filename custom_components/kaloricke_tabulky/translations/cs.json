@@ -190,6 +190,74 @@
           "description": "Volitelné datum záznamu váhy. Výchozí je dnešek. Podporuje YYYY-MM-DD nebo DD.MM.YYYY."
         }
       }
+    },
+    "search_food": {
+      "name": "Hledat jídlo",
+      "description": "Vyhledá potraviny nebo nápoje v Kalorických Tabulkách a vrátí jejich GUID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ID nastavení integrace",
+          "description": "Volitelné ID účtu. Je potřeba jen v případě, že je nastaveno více účtů."
+        },
+        "query": {
+          "name": "Dotaz",
+          "description": "Text pro hledání potraviny nebo nápoje."
+        },
+        "kind": {
+          "name": "Typ",
+          "description": "Hledat potraviny nebo nápoje."
+        },
+        "page": {
+          "name": "Stránka",
+          "description": "Stránka výsledků hledání. Začíná od 0."
+        }
+      }
+    },
+    "record_food": {
+      "name": "Zapsat jídlo",
+      "description": "Zapíše potravinu nebo nápoj do deníku Kalorických Tabulek.",
+      "fields": {
+        "config_entry_id": {
+          "name": "ID nastavení integrace",
+          "description": "Volitelné ID účtu. Je potřeba jen v případě, že je nastaveno více účtů."
+        },
+        "query": {
+          "name": "Dotaz",
+          "description": "Text pro hledání potraviny nebo nápoje. Použij buď query, nebo food_guid."
+        },
+        "food_guid": {
+          "name": "GUID potraviny",
+          "description": "Přesné GUID potraviny z akce search_food. Použij buď query, nebo food_guid."
+        },
+        "kind": {
+          "name": "Typ",
+          "description": "Zapsat potravinu nebo nápoj při použití query."
+        },
+        "amount": {
+          "name": "Množství",
+          "description": "Volitelné kladné množství, například 250 s jednotkou ml nebo 100 s jednotkou g."
+        },
+        "unit": {
+          "name": "Jednotka",
+          "description": "Volitelná nápověda jednotky, například g, ml, kg nebo l."
+        },
+        "unit_guid": {
+          "name": "GUID jednotky",
+          "description": "Přesné GUID jednotky z formuláře Kalorických Tabulek. Jen pro pokročilé použití."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Volitelné datum v deníku. Výchozí je dnešek. Podporuje YYYY-MM-DD nebo DD.MM.YYYY."
+        },
+        "time": {
+          "name": "Čas",
+          "description": "Volitelný přesný čas v deníku. Výchozí je aktuální čas Home Assistantu. Použij HH:MM."
+        },
+        "meal_type": {
+          "name": "Typ jídla",
+          "description": "Volitelné ruční nastavení typu jídla. Když chybí, integrace ho přiřadí podle času."
+        }
+      }
     }
   }
 }

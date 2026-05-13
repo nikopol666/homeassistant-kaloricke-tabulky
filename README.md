@@ -15,9 +15,12 @@ Home Assistant custom integration for Kaloricke Tabulky.
 - Creates sensors for weight, nutrition, water intake, activity energy and
   daily energy balance.
 - Adds a `kaloricke_tabulky.record_weight` action for recording body weight.
+- Adds `kaloricke_tabulky.search_food` and `kaloricke_tabulky.record_food`
+  actions for searching and recording foods or drinks.
 - Refreshes sensors every 240 minutes by default. This is intentionally gentle
   because the Kaloricke Tabulky API used by this integration is unofficial.
-- Refreshes the sensor immediately after the `record_weight` action succeeds.
+- Refreshes sensors immediately after `record_weight` or `record_food`
+  succeeds.
 
 You can change the refresh interval in the integration options. The minimum is
 15 minutes.
@@ -59,6 +62,10 @@ records as attributes.
 
 When Kaloricke Tabulky starts returning another numeric metric with a clear
 unit, the integration can expose it as an additional dynamic sensor.
+
+Free accounts may return fewer nutrient cards from the diary summary endpoint
+than Premium accounts. The integration therefore also reads the detailed diary
+endpoint and fills missing nutrient totals from food rows when possible.
 
 ### Lovelace nutrient card example
 
@@ -231,7 +238,9 @@ integration hashes the password with MD5 only when signing in, matching the
 current Kaloricke Tabulky web endpoint behavior. You do not need to paste
 browser cookies into Home Assistant.
 
-### Action
+### Actions
+
+#### Record weight
 
 ```yaml
 action: kaloricke_tabulky.record_weight
@@ -245,6 +254,69 @@ Accepted date formats are `YYYY-MM-DD` and `DD.MM.YYYY`.
 
 If you configure more than one Kaloricke Tabulky account, pass
 `config_entry_id` to choose the account.
+
+#### Search food or drinks
+
+Use this action when you want to find the exact `food_guid` and available item
+metadata before recording an item.
+
+```yaml
+action: kaloricke_tabulky.search_food
+response_variable: kt_search
+data:
+  query: voda
+  kind: drink
+```
+
+`kind` is either `food` or `drink`. Search results include `food_guid`, title,
+unit, energy and brand metadata when Kaloricke Tabulky returns it.
+
+#### Record food or drinks
+
+You can record an item by `query` or by an exact `food_guid` returned from
+`search_food`.
+
+```yaml
+action: kaloricke_tabulky.record_food
+data:
+  query: voda
+  kind: drink
+  amount: 250
+  unit: ml
+```
+
+This records the first matching drink result, selects a matching unit option
+when possible, and refreshes the sensors after the write succeeds.
+
+```yaml
+action: kaloricke_tabulky.record_food
+data:
+  food_guid: d10ffdda00be195b
+  amount: 100
+  unit: g
+  date: "2026-05-12"
+  time: "12:30"
+  meal_type: lunch
+```
+
+`date` is optional and accepts `YYYY-MM-DD` or `DD.MM.YYYY`. `time` is optional
+and defaults to the current Home Assistant time. If `meal_type` is omitted, the
+integration assigns it from time:
+
+| Time | Meal type |
+| --- | --- |
+| 05:00-09:59 | `breakfast` |
+| 10:00-11:29 | `morning_snack` |
+| 11:30-14:29 | `lunch` |
+| 14:30-17:29 | `afternoon_snack` |
+| 17:30-21:29 | `dinner` |
+| 21:30-04:59 | `second_dinner` |
+
+Supported explicit `meal_type` values are `breakfast`, `morning_snack`,
+`lunch`, `afternoon_snack`, `dinner`, `second_dinner`, or numeric IDs `1`-`6`.
+Advanced users can pass `unit_guid` directly from the Kaloricke Tabulky add
+form; otherwise the integration tries to select a suitable unit from `amount`
+and `unit`.
 
 ### Notes
 
@@ -269,9 +341,11 @@ Vlastní integrace Kalorické Tabulky pro Home Assistant.
 - Vytvoří senzory pro váhu, výživu, pitný režim, energii z aktivit a denní
   energetickou bilanci.
 - Přidá akci `kaloricke_tabulky.record_weight` pro zápis tělesné váhy.
+- Přidá akce `kaloricke_tabulky.search_food` a
+  `kaloricke_tabulky.record_food` pro hledání a zápis jídla nebo pití.
 - Výchozí obnova senzorů je každých 240 minut. Je to záměrně šetrné, protože
   API Kalorických Tabulek použité touto integrací je neoficiální.
-- Po úspěšném zápisu váhy se senzor obnoví okamžitě.
+- Po úspěšném zápisu váhy nebo jídla se senzory obnoví okamžitě.
 
 Interval obnovy jde změnit v nastavení integrace. Minimum je 15 minut.
 
@@ -312,6 +386,10 @@ měsíční záznamy váhy.
 
 Když Kalorické Tabulky začnou vracet další číselnou hodnotu s jasnou jednotkou,
 integrace ji může zobrazit jako další dynamický senzor.
+
+Bezplatné nebo demo účty můžou ze souhrnu deníku vracet méně nutrientů než Premium účty.
+Integrace proto čte i detail deníku a pokud to jde, dopočítá chybějící součty
+nutrientů z jednotlivých zapsaných potravin.
 
 ### Příklad Lovelace karty pro nutrienty
 
@@ -487,6 +565,8 @@ kopírovat.
 
 ### Akce
 
+#### Zapsat váhu
+
 ```yaml
 action: kaloricke_tabulky.record_weight
 data:
@@ -499,6 +579,68 @@ Podporované formáty data jsou `YYYY-MM-DD` a `DD.MM.YYYY`.
 
 Pokud máš nastavený více než jeden účet Kalorických Tabulek, přidej
 `config_entry_id`, aby bylo jasné, do kterého účtu se má váha zapsat.
+
+#### Hledat jídlo nebo pití
+
+Tahle akce se hodí, když chceš nejdřív najít přesné `food_guid` a metadata
+položky před zápisem.
+
+```yaml
+action: kaloricke_tabulky.search_food
+response_variable: kt_search
+data:
+  query: voda
+  kind: drink
+```
+
+`kind` je buď `food`, nebo `drink`. Výsledky obsahují `food_guid`, název,
+jednotku, energii a metadata značky, pokud je Kalorické Tabulky vrátí.
+
+#### Zapsat jídlo nebo pití
+
+Položku můžeš zapsat přes `query`, nebo přes přesné `food_guid` vrácené akcí
+`search_food`.
+
+```yaml
+action: kaloricke_tabulky.record_food
+data:
+  query: voda
+  kind: drink
+  amount: 250
+  unit: ml
+```
+
+Tohle zapíše první nalezený nápoj, pokud to jde vybere odpovídající jednotku a
+po úspěšném zápisu obnoví senzory.
+
+```yaml
+action: kaloricke_tabulky.record_food
+data:
+  food_guid: d10ffdda00be195b
+  amount: 100
+  unit: g
+  date: "2026-05-12"
+  time: "12:30"
+  meal_type: lunch
+```
+
+`date` je volitelné a podporuje `YYYY-MM-DD` nebo `DD.MM.YYYY`. `time` je
+volitelné a výchozí hodnota je aktuální čas Home Assistantu. Pokud nevyplníš
+`meal_type`, integrace ho přiřadí podle času:
+
+| Čas | Typ jídla |
+| --- | --- |
+| 05:00-09:59 | `breakfast` |
+| 10:00-11:29 | `morning_snack` |
+| 11:30-14:29 | `lunch` |
+| 14:30-17:29 | `afternoon_snack` |
+| 17:30-21:29 | `dinner` |
+| 21:30-04:59 | `second_dinner` |
+
+Podporované ruční hodnoty `meal_type` jsou `breakfast`, `morning_snack`,
+`lunch`, `afternoon_snack`, `dinner`, `second_dinner`, nebo číselná ID `1`-`6`.
+Pokročile můžeš poslat přímo `unit_guid` z formuláře Kalorických Tabulek;
+jinak se integrace pokusí vybrat vhodnou jednotku podle `amount` a `unit`.
 
 ### Poznámky
 

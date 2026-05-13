@@ -6,15 +6,66 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from hashlib import md5
 from http.cookies import SimpleCookie
+from math import isfinite
 import re
 from typing import Any
+from urllib.parse import urlencode
 
 from aiohttp import ClientResponse, ClientSession
 
 LOGIN_URL = "https://www.kaloricketabulky.cz/login/create?format=json"
 SUMMARY_URL = "https://www.kaloricketabulky.cz/statistic/summary/{date}/get?format=json"
 DIARY_SUMMARY_URL = "https://www.kaloricketabulky.cz/user/diary/summary/{date}/get?format=json"
+DIARY_DETAIL_URL = "https://www.kaloricketabulky.cz/user/diary/{date}/get?format=json"
 RECORD_WEIGHT_URL = "https://www.kaloricketabulky.cz/user/weight/add?format=json&="
+SEARCH_FOOD_URL = "https://www.kaloricketabulky.cz/autocomplete/{kind}?{query}"
+FOOD_FORM_URL = (
+    "https://www.kaloricketabulky.cz/user/foodstuff/add/form/{guid}/{date}/get?format=json"
+)
+RECORD_FOOD_URL = "https://www.kaloricketabulky.cz/user/foodstuff/add?format=json&="
+
+SEARCH_KINDS = {
+    "food": "foodstuff-meal",
+    "drink": "drink",
+}
+
+MEAL_TYPES = {
+    "1": "1",
+    "breakfast": "1",
+    "snidane": "1",
+    "snídaně": "1",
+    "2": "2",
+    "morning_snack": "2",
+    "brunch": "2",
+    "dopoledni_svacina": "2",
+    "dopolední_svačina": "2",
+    "3": "3",
+    "lunch": "3",
+    "obed": "3",
+    "oběd": "3",
+    "4": "4",
+    "afternoon_snack": "4",
+    "snack": "4",
+    "odpoledni_svacina": "4",
+    "odpolední_svačina": "4",
+    "5": "5",
+    "dinner": "5",
+    "vecere": "5",
+    "večeře": "5",
+    "6": "6",
+    "second_dinner": "6",
+    "druha_vecere": "6",
+    "druhá_večeře": "6",
+}
+
+DETAIL_NUTRIENT_FIELDS: dict[str, tuple[str, str | None]] = {
+    "protein": ("Protein", "g"),
+    "carbohydrate": ("Carbohydrates", "g"),
+    "fat": ("Fat", "g"),
+    "fiber": ("Fiber", "g"),
+    "sugar": ("Sugar", "g"),
+    "salt": ("Salt", "g"),
+}
 
 
 class KalorickeTabulkyError(Exception):
@@ -172,10 +223,21 @@ class KalorickeTabulkyApi:
             DIARY_SUMMARY_URL.format(date=self._format_date(request_date)),
         )
         diary_data = diary_body.get("data") or {}
+        metrics = _extract_diary_summary_metrics(diary_data)
+        try:
+            detail_body = await self._request_with_reauth(
+                "GET",
+                DIARY_DETAIL_URL.format(date=self._format_date(request_date)),
+            )
+            detail_data = detail_body.get("data") or {}
+        except KalorickeTabulkyError:
+            detail_data = {}
+        _add_detail_fallback_metrics(detail_data, metrics)
+
         return SummaryData(
             weight_records=weight_records,
-            metrics=_extract_diary_summary_metrics(diary_data),
-            raw={"statistic": statistic_data, "diary": diary_data},
+            metrics=metrics,
+            raw={"statistic": statistic_data, "diary": diary_data, "detail": detail_data},
         )
 
     async def async_get_recent_weight(self, target_date: date | None = None) -> list[WeightRecord]:
@@ -192,6 +254,76 @@ class KalorickeTabulkyApi:
             json={"weight": weight, "date": self._format_date(target_date or date.today())},
         )
 
+    async def async_search_food(
+        self, query: str, kind: str = "food", page: int = 0
+    ) -> list[dict[str, Any]]:
+        """Search food or drink records."""
+        search_kind = _search_kind(kind)
+        query_string = urlencode({"query": query, "page": page, "format": "json"})
+        body = await self._request_any_with_reauth(
+            "GET", SEARCH_FOOD_URL.format(kind=search_kind, query=query_string)
+        )
+        if not isinstance(body, list):
+            raise KalorickeTabulkyError(f"Unexpected search response: {body}")
+        return [_normalize_search_result(item) for item in body if isinstance(item, dict)]
+
+    async def async_record_food(
+        self,
+        *,
+        query: str | None = None,
+        food_guid: str | None = None,
+        kind: str = "food",
+        amount: float | None = None,
+        unit: str | None = None,
+        unit_guid: str | None = None,
+        target_date: date | None = None,
+        target_time: str | None = None,
+        meal_type: str | None = None,
+    ) -> dict[str, Any]:
+        """Record a food or drink item in the diary."""
+        request_date = target_date or date.today()
+        search_result: dict[str, Any] | None = None
+        if food_guid is None:
+            if not query:
+                raise KalorickeTabulkyError("Set query or food_guid")
+            results = await self.async_search_food(query, kind)
+            search_result = next(
+                (item for item in results if item.get("class") == "foodstuff"),
+                next((item for item in results if item.get("food_guid")), None),
+            )
+            if search_result is None:
+                raise KalorickeTabulkyError(f"No food result found for query: {query}")
+            food_guid = str(search_result["food_guid"])
+
+        form_body = await self._request_with_reauth(
+            "GET",
+            FOOD_FORM_URL.format(guid=food_guid, date=self._format_date(request_date)),
+        )
+        form = form_body.get("data")
+        if not isinstance(form, dict):
+            raise KalorickeTabulkyError(f"Unexpected add form response: {form_body}")
+
+        payload = dict(form)
+        payload["date"] = self._format_date(request_date)
+        if target_time is not None:
+            payload["timeUser"] = True
+            payload["time"] = target_time
+        payload["diaryTimeGuid"] = _meal_type_id(meal_type) or _meal_type_from_time(target_time)
+        _apply_unit_selection(payload, amount=amount, unit=unit, unit_guid=unit_guid)
+
+        response = await self._request_with_reauth("POST", RECORD_FOOD_URL, json=payload)
+        return {
+            "message": response.get("message"),
+            "food_guid": food_guid,
+            "title": payload.get("title"),
+            "date": payload.get("date"),
+            "time": payload.get("time"),
+            "meal_type": payload.get("diaryTimeGuid"),
+            "unit_guid": payload.get("unitGuid"),
+            "multiplier": payload.get("multiplier"),
+            "search_result": search_result,
+        }
+
     async def _request_with_reauth(
         self, method: str, url: str, **kwargs: Any
     ) -> dict[str, Any]:
@@ -205,7 +337,28 @@ class KalorickeTabulkyApi:
             await self.authenticate()
             return await self._request(method, url, **kwargs)
 
+    async def _request_any_with_reauth(
+        self, method: str, url: str, **kwargs: Any
+    ) -> Any:
+        """Run an authenticated request that may return a dict or list."""
+        if self._cookies is None:
+            await self.authenticate()
+
+        try:
+            return await self._request_any(method, url, **kwargs)
+        except SessionExpiredError:
+            await self.authenticate()
+            return await self._request_any(method, url, **kwargs)
+
     async def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+        body = await self._request_any(method, url, **kwargs)
+        if not isinstance(body, dict):
+            raise KalorickeTabulkyError(f"Unexpected API response: {body}")
+        if body.get("code") != 0:
+            raise KalorickeTabulkyError(body.get("message") or f"Unexpected API response: {body}")
+        return body
+
+    async def _request_any(self, method: str, url: str, **kwargs: Any) -> Any:
         headers = dict(kwargs.pop("headers", {}))
         headers["Cookie"] = self._cookies or ""
         response = await self._session.request(
@@ -214,12 +367,12 @@ class KalorickeTabulkyApi:
         body = await self._json_response(response)
         if response.status in (301, 302, 303, 307, 308):
             raise SessionExpiredError("Session expired")
-        if body.get("code") != 0:
+        if isinstance(body, dict) and body.get("code") not in (None, 0):
             raise KalorickeTabulkyError(body.get("message") or f"Unexpected API response: {body}")
         return body
 
     @staticmethod
-    async def _json_response(response: ClientResponse) -> dict[str, Any]:
+    async def _json_response(response: ClientResponse) -> Any:
         content_type = response.headers.get("Content-Type", "")
         if response.status in (301, 302, 303, 307, 308):
             raise SessionExpiredError("Session expired")
@@ -243,6 +396,17 @@ def parse_service_date(value: str | None) -> date | None:
         except ValueError:
             continue
     raise ValueError("Date must use YYYY-MM-DD or DD.MM.YYYY format")
+
+
+def parse_service_time(value: str | None) -> str | None:
+    """Parse a Home Assistant time selector value."""
+    if not value:
+        return None
+    text = value.strip()
+    match = re.fullmatch(r"([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?", text)
+    if not match:
+        raise ValueError("Time must use HH:MM format")
+    return f"{int(match.group(1)):02d}:{match.group(2)}"
 
 
 def _extract_summary_metrics(data: dict[str, Any]) -> dict[str, SummaryMetric]:
@@ -373,6 +537,60 @@ def _add_balance_metrics(value: Any, metrics: dict[str, SummaryMetric]) -> None:
                     unit=unit,
                 ),
             )
+
+
+def _add_detail_fallback_metrics(
+    data: dict[str, Any], metrics: dict[str, SummaryMetric]
+) -> None:
+    """Fill missing nutrient totals from the detailed diary endpoint.
+
+    Free accounts may omit some daily summary nutrient cards while the detailed
+    diary rows still contain per-food values. This fallback only fills metrics
+    that the summary did not return, so Premium summary values keep precedence.
+    """
+    totals = {key: 0.0 for key in DETAIL_NUTRIENT_FIELDS}
+    found = {key: False for key in DETAIL_NUTRIENT_FIELDS}
+
+    for item in _iter_foodstuff_items(data):
+        for key in DETAIL_NUTRIENT_FIELDS:
+            value = _parse_localized_number(item.get(key))
+            if value is None:
+                continue
+            totals[key] += value
+            found[key] = True
+
+    for key, was_found in found.items():
+        if not was_found or key in metrics:
+            continue
+        name, unit = DETAIL_NUTRIENT_FIELDS[key]
+        metrics[key] = SummaryMetric(
+            key=key,
+            name=name,
+            value=totals[key],
+            unit=unit,
+        )
+
+
+def _iter_foodstuff_items(value: Any) -> list[dict[str, Any]]:
+    """Return foodstuff dictionaries from the detailed diary payload."""
+    if isinstance(value, dict):
+        items: list[dict[str, Any]] = []
+        foodstuff = value.get("foodstuff")
+        if isinstance(foodstuff, list):
+            items.extend(item for item in foodstuff if isinstance(item, dict))
+        for child in value.values():
+            if isinstance(child, dict | list):
+                items.extend(_iter_foodstuff_items(child))
+        return items
+
+    if isinstance(value, list):
+        items = []
+        for child in value:
+            if isinstance(child, dict | list):
+                items.extend(_iter_foodstuff_items(child))
+        return items
+
+    return []
 
 
 def _known_metric(key: str, value: float) -> SummaryMetric:
@@ -508,3 +726,122 @@ def _parse_localized_number(value: Any) -> float | None:
 
 def _is_number(value: Any) -> bool:
     return isinstance(value, int | float) and not isinstance(value, bool)
+
+
+def _search_kind(value: str) -> str:
+    try:
+        return SEARCH_KINDS[value]
+    except KeyError as err:
+        raise KalorickeTabulkyError("kind must be food or drink") from err
+
+
+def _normalize_search_result(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "food_guid": item.get("id"),
+        "title": item.get("title"),
+        "class": item.get("clazz"),
+        "url": item.get("url"),
+        "unit": item.get("unit"),
+        "energy": _parse_localized_number(item.get("value")),
+        "energy_unit": item.get("energyUnit"),
+        "brand_name": item.get("brandName"),
+        "favorite": item.get("favorite"),
+        "is_liquid": item.get("isLiquid") if "isLiquid" in item else item.get("liquid"),
+        "status": item.get("status"),
+    }
+
+
+def _meal_type_id(value: str | None) -> str | None:
+    if not value:
+        return None
+    key = value.strip().lower().replace(" ", "_")
+    if key in MEAL_TYPES:
+        return MEAL_TYPES[key]
+    raise KalorickeTabulkyError(
+        "meal_type must be one of breakfast, morning_snack, lunch, "
+        "afternoon_snack, dinner, second_dinner, or 1-6"
+    )
+
+
+def _meal_type_from_time(value: str | None) -> str:
+    if value is None:
+        return "1"
+    hour, minute = (int(part) for part in value.split(":"))
+    minutes = hour * 60 + minute
+    if 5 * 60 <= minutes < 10 * 60:
+        return "1"
+    if 10 * 60 <= minutes < 11 * 60 + 30:
+        return "2"
+    if 11 * 60 + 30 <= minutes < 14 * 60 + 30:
+        return "3"
+    if 14 * 60 + 30 <= minutes < 17 * 60 + 30:
+        return "4"
+    if 17 * 60 + 30 <= minutes < 21 * 60 + 30:
+        return "5"
+    return "6"
+
+
+def _apply_unit_selection(
+    payload: dict[str, Any],
+    *,
+    amount: float | None,
+    unit: str | None,
+    unit_guid: str | None,
+) -> None:
+    if unit_guid:
+        payload["unitGuid"] = unit_guid
+        if amount is not None:
+            _validate_amount(amount)
+            payload["multiplier"] = amount
+        return
+
+    if amount is None:
+        return
+    _validate_amount(amount)
+
+    options = [
+        option
+        for option in payload.get("unitOptions", [])
+        if isinstance(option, dict) and option.get("id")
+    ]
+    selected = _find_unit_option(options, amount, unit)
+    if selected is None:
+        payload["multiplier"] = amount
+        return
+
+    payload["unitGuid"] = selected["id"]
+    selected_multiplier = _parse_localized_number(selected.get("multiplier"))
+    if selected_multiplier is not None and abs(selected_multiplier - amount) < 0.000001:
+        payload["multiplier"] = 1.0
+    elif selected_multiplier == 1:
+        payload["multiplier"] = amount
+    else:
+        payload["multiplier"] = amount
+
+
+def _validate_amount(amount: float) -> None:
+    if not isfinite(amount) or amount <= 0:
+        raise KalorickeTabulkyError("amount must be a positive finite number")
+
+
+def _find_unit_option(
+    options: list[dict[str, Any]], amount: float, unit: str | None
+) -> dict[str, Any] | None:
+    normalized_unit = unit.strip().lower() if unit else None
+    unit_matches = [
+        option
+        for option in options
+        if normalized_unit is None
+        or normalized_unit
+        in re.sub(r"[^a-z0-9]+", " ", str(option.get("title", "")).lower()).split()
+    ]
+    for option in unit_matches:
+        multiplier = _parse_localized_number(option.get("multiplier"))
+        if multiplier is not None and abs(multiplier - amount) < 0.000001:
+            return option
+    if normalized_unit is not None:
+        for option in unit_matches:
+            multiplier = _parse_localized_number(option.get("multiplier"))
+            if multiplier == 1:
+                return option
+    return None

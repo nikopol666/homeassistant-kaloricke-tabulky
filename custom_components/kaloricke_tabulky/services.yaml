@@ -26,3 +26,123 @@ record_weight:
       required: false
       selector:
         date:
+
+search_food:
+  name: Search food
+  description: Search Kaloricke Tabulky foods or drinks and return matching food GUIDs for record_food.
+  fields:
+    config_entry_id:
+      name: Config entry ID
+      description: Optional account entry ID. Required only when multiple accounts are configured.
+      required: false
+      selector:
+        text:
+    query:
+      name: Query
+      description: Food or drink search text.
+      required: true
+      example: voda
+      selector:
+        text:
+    kind:
+      name: Kind
+      description: Search either foods or drinks.
+      required: false
+      default: food
+      selector:
+        select:
+          options:
+            - food
+            - drink
+    page:
+      name: Page
+      description: Search result page. Starts at 0.
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 1
+          mode: box
+
+record_food:
+  name: Record food
+  description: Record a food or drink item in the Kaloricke Tabulky diary.
+  fields:
+    config_entry_id:
+      name: Config entry ID
+      description: Optional account entry ID. Required only when multiple accounts are configured.
+      required: false
+      selector:
+        text:
+    query:
+      name: Query
+      description: Food or drink search text. Use either query or food_guid.
+      required: false
+      example: voda
+      selector:
+        text:
+    food_guid:
+      name: Food GUID
+      description: Exact Kaloricke Tabulky food GUID from search_food. Use either query or food_guid.
+      required: false
+      selector:
+        text:
+    kind:
+      name: Kind
+      description: Record either a food or a drink when query is used.
+      required: false
+      default: food
+      selector:
+        select:
+          options:
+            - food
+            - drink
+    amount:
+      name: Amount
+      description: Optional positive amount. With unit, the integration tries to select the closest unit option, for example 250 ml or 100 g.
+      required: false
+      selector:
+        number:
+          min: 0.1
+          max: 10000
+          step: 0.1
+          mode: box
+    unit:
+      name: Unit
+      description: Optional unit hint, for example g, ml, kg or l.
+      required: false
+      selector:
+        text:
+    unit_guid:
+      name: Unit GUID
+      description: Exact unit GUID from the Kaloricke Tabulky add form. Advanced use only.
+      required: false
+      selector:
+        text:
+    date:
+      name: Date
+      description: Optional diary date. Defaults to today. Accepts YYYY-MM-DD or DD.MM.YYYY.
+      required: false
+      selector:
+        date:
+    time:
+      name: Time
+      description: Optional exact diary time. Defaults to the current Home Assistant time. Use HH:MM.
+      required: false
+      selector:
+        time:
+    meal_type:
+      name: Meal type
+      description: Optional meal type override. If omitted, the integration assigns it from time.
+      required: false
+      selector:
+        select:
+          options:
+            - breakfast
+            - morning_snack
+            - lunch
+            - afternoon_snack
+            - dinner
+            - second_dinner
