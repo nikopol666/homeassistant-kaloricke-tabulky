@@ -209,6 +209,113 @@ styles:
     - padding: 0
 ```
 
+### Lovelace energy card example
+
+The total energy gauge uses a different threshold model than nutrient gauges.
+Kaloricke Tabulky uses green `85-115%` for stay fit and weight loss modes, and
+green `90-120%` for muscle gain mode.
+
+Replace the entity IDs with your own sensor IDs. Set `KT_MODE` to `0` for stay
+fit, `1` for weight loss, or `2` for muscle gain.
+
+```yaml
+type: custom:button-card
+entity: sensor.kaloricke_tabulky_energy
+show_name: false
+show_icon: false
+show_state: false
+show_label: true
+label: |
+  [[[
+    const ENERGY_EATEN = 'sensor.kaloricke_tabulky_energy';
+    const ENERGY_TARGET = 'sensor.kaloricke_tabulky_energy_target';
+    const ACTIVITY_KCAL = 'sensor.kaloricke_tabulky_activity_level_energy';
+
+    const KT_MODE = 0;
+
+    function parseKtNumber(value) {
+      if (typeof value === 'number') return value;
+      if (typeof value !== 'string') return NaN;
+      return Number(value.replace(/\s/g, '').replace(',', '.'));
+    }
+
+    function color(pct) {
+      if (!Number.isFinite(pct)) return '#FF8040';
+      const t = KT_MODE === 2 ? { low: 10, high: 20 } : { low: 15, high: 15 };
+      if (pct < 100 - t.low) return '#FF8040';
+      if (pct > 100 + t.high) return '#DD4B39';
+      return '#99cc33';
+    }
+
+    const eaten = parseKtNumber(states[ENERGY_EATEN]?.state);
+    const target = parseKtNumber(states[ENERGY_TARGET]?.state);
+    const activity = parseKtNumber(states[ACTIVITY_KCAL]?.state);
+    const pct = Number.isFinite(target) && target > 0
+      ? Math.round((eaten / target) * 100)
+      : NaN;
+    const c = color(pct);
+    const fmt = v => Number.isFinite(v)
+      ? Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')
+      : '?';
+
+    const S = 200;
+    const r = 82;
+    const sw = 24;
+    const circ = 2 * Math.PI * r;
+    const dash = (Number.isFinite(pct) ? Math.min(Math.max(pct, 0), 100) : 0) / 100 * circ;
+    const cx = S / 2;
+    const cy = S / 2;
+    const pillW = 76;
+    const pillH = 30;
+
+    const forkPath = 'M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-3.7-2.1-5.03-3.52-5.03H1.01C-.41 9.96.01 13.03 0 14.99h16.03z';
+    const runPath = 'M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z';
+    const icon = p => `<svg width="40" height="40" viewBox="0 0 24 24" fill="${c}"><path d="${p}"/></svg>`;
+
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="display:flex;flex-direction:column;align-items:center;width:22%">
+          ${icon(forkPath)}
+          <div style="color:${c};font-size:15px;font-weight:700;margin-top:10px;text-align:center">${fmt(eaten)} kcal</div>
+          <div style="color:#777;font-size:12px;margin-top:3px">Eaten</div>
+        </div>
+
+        <div style="width:56%;display:flex;justify-content:center">
+          <svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="max-width:100%">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2a2a2a" stroke-width="${sw}"/>
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="${sw}"
+              stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
+              transform="rotate(-90 ${cx} ${cy})"/>
+            <text x="${cx}" y="${cy - 10}" text-anchor="middle"
+              fill="white" font-size="30" font-weight="700" font-family="sans-serif">${fmt(eaten)}</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle"
+              fill="#888" font-size="13" font-family="sans-serif">/ ${fmt(target)} kcal</text>
+            <rect x="${cx - pillW / 2}" y="${cy + 26}" width="${pillW}" height="${pillH}"
+              rx="${pillH / 2}" fill="${c}"/>
+            <text x="${cx}" y="${cy + 26 + pillH * 0.67}" text-anchor="middle"
+              fill="white" font-size="14" font-weight="700" font-family="sans-serif">${Number.isFinite(pct) ? pct : '?'} %</text>
+          </svg>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;width:22%">
+          ${icon(runPath)}
+          <div style="color:${c};font-size:15px;font-weight:700;margin-top:10px;text-align:center">${fmt(activity)} kcal</div>
+          <div style="color:#777;font-size:12px;margin-top:3px">Activities</div>
+        </div>
+      </div>`;
+  ]]]
+styles:
+  card:
+    - background: "#1c1c1e"
+    - border-radius: 16px
+    - padding: 20px 16px
+    - color: white
+    - font-family: sans-serif
+  label:
+    - width: 100%
+    - padding: 0
+```
+
 ### Installation
 
 #### HACS custom repository
@@ -532,6 +639,113 @@ styles:
   label:
     - width: 100%
     - text-align: left
+    - padding: 0
+```
+
+### Příklad Lovelace karty pro energii
+
+Celková energie používá jiné prahy než nutrienty. Kalorické Tabulky používají
+zelený rozsah `85-115 %` pro režimy být fit a hubnutí, a zelený rozsah
+`90-120 %` pro režim nabrat svaly.
+
+Entity ID si nahraď podle svých senzorů. `KT_MODE` nastav na `0` pro být fit,
+`1` pro hubnutí, nebo `2` pro nabrat svaly.
+
+```yaml
+type: custom:button-card
+entity: sensor.kaloricke_tabulky_energy
+show_name: false
+show_icon: false
+show_state: false
+show_label: true
+label: |
+  [[[
+    const ENERGY_EATEN = 'sensor.kaloricke_tabulky_energy';
+    const ENERGY_TARGET = 'sensor.kaloricke_tabulky_energy_target';
+    const ACTIVITY_KCAL = 'sensor.kaloricke_tabulky_activity_level_energy';
+
+    const KT_MODE = 0;
+
+    function parseKtNumber(value) {
+      if (typeof value === 'number') return value;
+      if (typeof value !== 'string') return NaN;
+      return Number(value.replace(/\s/g, '').replace(',', '.'));
+    }
+
+    function color(pct) {
+      if (!Number.isFinite(pct)) return '#FF8040';
+      const t = KT_MODE === 2 ? { low: 10, high: 20 } : { low: 15, high: 15 };
+      if (pct < 100 - t.low) return '#FF8040';
+      if (pct > 100 + t.high) return '#DD4B39';
+      return '#99cc33';
+    }
+
+    const eaten = parseKtNumber(states[ENERGY_EATEN]?.state);
+    const target = parseKtNumber(states[ENERGY_TARGET]?.state);
+    const activity = parseKtNumber(states[ACTIVITY_KCAL]?.state);
+    const pct = Number.isFinite(target) && target > 0
+      ? Math.round((eaten / target) * 100)
+      : NaN;
+    const c = color(pct);
+    const fmt = v => Number.isFinite(v)
+      ? Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')
+      : '?';
+
+    const S = 200;
+    const r = 82;
+    const sw = 24;
+    const circ = 2 * Math.PI * r;
+    const dash = (Number.isFinite(pct) ? Math.min(Math.max(pct, 0), 100) : 0) / 100 * circ;
+    const cx = S / 2;
+    const cy = S / 2;
+    const pillW = 76;
+    const pillH = 30;
+
+    const forkPath = 'M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-3.7-2.1-5.03-3.52-5.03H1.01C-.41 9.96.01 13.03 0 14.99h16.03z';
+    const runPath = 'M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z';
+    const icon = p => `<svg width="40" height="40" viewBox="0 0 24 24" fill="${c}"><path d="${p}"/></svg>`;
+
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="display:flex;flex-direction:column;align-items:center;width:22%">
+          ${icon(forkPath)}
+          <div style="color:${c};font-size:15px;font-weight:700;margin-top:10px;text-align:center">${fmt(eaten)} kcal</div>
+          <div style="color:#777;font-size:12px;margin-top:3px">Snědeno</div>
+        </div>
+
+        <div style="width:56%;display:flex;justify-content:center">
+          <svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="max-width:100%">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2a2a2a" stroke-width="${sw}"/>
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="${sw}"
+              stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
+              transform="rotate(-90 ${cx} ${cy})"/>
+            <text x="${cx}" y="${cy - 10}" text-anchor="middle"
+              fill="white" font-size="30" font-weight="700" font-family="sans-serif">${fmt(eaten)}</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle"
+              fill="#888" font-size="13" font-family="sans-serif">/ ${fmt(target)} kcal</text>
+            <rect x="${cx - pillW / 2}" y="${cy + 26}" width="${pillW}" height="${pillH}"
+              rx="${pillH / 2}" fill="${c}"/>
+            <text x="${cx}" y="${cy + 26 + pillH * 0.67}" text-anchor="middle"
+              fill="white" font-size="14" font-weight="700" font-family="sans-serif">${Number.isFinite(pct) ? pct : '?'} %</text>
+          </svg>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;width:22%">
+          ${icon(runPath)}
+          <div style="color:${c};font-size:15px;font-weight:700;margin-top:10px;text-align:center">${fmt(activity)} kcal</div>
+          <div style="color:#777;font-size:12px;margin-top:3px">Aktivity</div>
+        </div>
+      </div>`;
+  ]]]
+styles:
+  card:
+    - background: "#1c1c1e"
+    - border-radius: 16px
+    - padding: 20px 16px
+    - color: white
+    - font-family: sans-serif
+  label:
+    - width: 100%
     - padding: 0
 ```
 
