@@ -6,13 +6,14 @@ from datetime import timedelta
 from math import isfinite
 from typing import Any
 
+from aiohttp import DummyCookieJar
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
@@ -206,7 +207,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> bool:
     """Set up Kaloricke Tabulky from a config entry."""
-    session = async_get_clientsession(hass)
+    session = async_create_clientsession(hass, cookie_jar=DummyCookieJar())
     api = KalorickeTabulkyApi(session, entry.data[CONF_EMAIL], entry.data[CONF_PASSWORD])
     interval_minutes = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     coordinator = KalorickeTabulkyCoordinator(
