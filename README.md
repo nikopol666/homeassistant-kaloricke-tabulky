@@ -1,6 +1,6 @@
 # Kaloricke Tabulky Home Assistant integration
 
-<img src="custom_components/kaloricke_tabulky/brand/logo.png" alt="Kaloricke Tabulky" width="260">
+<img src="https://raw.githubusercontent.com/nikopol666/homeassistant-kaloricke-tabulky/main/custom_components/kaloricke_tabulky/brand/logo.png" alt="Kaloricke Tabulky" width="260">
 
 [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nikopol666&repository=homeassistant-kaloricke-tabulky&category=integration)
 
