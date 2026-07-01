@@ -11,6 +11,7 @@
   - [Sensors](#sensors)
   - [Lovelace nutrient card example](#lovelace-nutrient-card-example)
   - [Lovelace energy card example](#lovelace-energy-card-example)
+  - [Quick food buttons](#quick-food-buttons)
   - [Installation](#installation)
   - [Actions](#actions)
   - [Notes](#notes)
@@ -19,6 +20,7 @@
   - [Senzory](#senzory)
   - [Příklad Lovelace karty pro nutrienty](#příklad-lovelace-karty-pro-nutrienty)
   - [Příklad Lovelace karty pro energii](#příklad-lovelace-karty-pro-energii)
+  - [Rychlá tlačítka jídla](#rychlá-tlačítka-jídla)
   - [Instalace](#instalace)
   - [Akce](#akce)
   - [Poznámky](#poznámky)
@@ -36,6 +38,9 @@ Home Assistant custom integration for Kaloricke Tabulky.
 - Adds a `kaloricke_tabulky.record_weight` action for recording body weight.
 - Adds `kaloricke_tabulky.search_food` and `kaloricke_tabulky.record_food`
   actions for searching and recording foods or drinks.
+- Creates optional quick food button entities from integration options.
+  Pressing a button records the configured food amount with the current Home
+  Assistant date and time.
 - Refreshes sensors every 240 minutes by default. This is intentionally gentle
   because the Kaloricke Tabulky API used by this integration is unofficial.
 - Refreshes sensors immediately after `record_weight` or `record_food`
@@ -339,6 +344,27 @@ styles:
     - padding: 0
 ```
 
+### Quick food buttons
+
+Open the integration options, choose **Add quick food button**, search for a
+food or drink, select the exact Kaloricke Tabulky item, then set the amount and
+unit. The integration creates a `button` entity for the saved preset.
+
+When pressed, the button records that food under the configured account using
+the current Home Assistant date and time. The entity exposes the title, amount,
+unit, food GUID, item type (`food` or `drink`), `is_drink` flag and image URL as
+attributes, and uses the Kaloricke Tabulky image as `entity_picture` when the
+API returns one.
+
+You can add it to a dashboard with the standard Button card:
+
+```yaml
+type: button
+entity: button.kaloricke_tabulky_apple_100_g
+show_name: true
+show_icon: true
+```
+
 ### Installation
 
 #### HACS custom repository
@@ -474,6 +500,9 @@ Vlastní integrace Kalorické Tabulky pro Home Assistant.
 - Přidá akci `kaloricke_tabulky.record_weight` pro zápis tělesné váhy.
 - Přidá akce `kaloricke_tabulky.search_food` a
   `kaloricke_tabulky.record_food` pro hledání a zápis jídla nebo pití.
+- Umí vytvořit volitelné entity rychlých tlačítek jídla z nastavení integrace.
+  Stisk tlačítka zapíše nastavenou potravinu v daném množství s aktuálním
+  datem a časem Home Assistantu.
 - Výchozí obnova senzorů je každých 240 minut. Je to záměrně šetrné, protože
   API Kalorických Tabulek použité touto integrací je neoficiální.
 - Po úspěšném zápisu váhy nebo jídla se senzory obnoví okamžitě.
@@ -774,6 +803,27 @@ styles:
   label:
     - width: 100%
     - padding: 0
+```
+
+### Rychlá tlačítka jídla
+
+Otevři nastavení integrace, vyber **Přidat rychlé tlačítko jídla**, vyhledej
+potravinu nebo nápoj, vyber přesnou položku z Kalorických Tabulek a nastav
+množství s jednotkou. Integrace pro uložený preset vytvoří entitu `button`.
+
+Při stisku tlačítko zapíše danou potravinu pod nastaveným účtem s aktuálním
+datem a časem Home Assistantu. Entita má v atributech název, množství,
+jednotku, GUID potraviny, typ položky (`food` nebo `drink`), příznak
+`is_drink` a URL obrázku. Pokud API obrázek vrátí, použije ho jako
+`entity_picture`.
+
+Na dashboard ji můžeš dát přes standardní Button card:
+
+```yaml
+type: button
+entity: button.kaloricke_tabulky_jablko_100_g
+show_name: true
+show_icon: true
 ```
 
 ### Instalace

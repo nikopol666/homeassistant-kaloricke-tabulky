@@ -23,11 +23,57 @@
     "step": {
       "init": {
         "title": "Kaloricke Tabulky options",
+        "description": "Manage sensor refresh and quick food buttons.",
+        "menu_options": {
+          "general": "General settings",
+          "add_quick_food": "Add quick food button",
+          "remove_quick_food": "Remove quick food button"
+        }
+      },
+      "general": {
+        "title": "General settings",
         "description": "Set how often Home Assistant should refresh sensors. The default is 240 minutes because the API is unofficial and body weight usually changes slowly.",
         "data": {
           "scan_interval": "Sensor refresh interval in minutes"
         }
+      },
+      "add_quick_food": {
+        "title": "Add quick food button",
+        "description": "Search Kaloricke Tabulky for the food or drink that should be recorded by one button press.",
+        "data": {
+          "query": "Search text",
+          "kind": "Kind"
+        }
+      },
+      "select_quick_food": {
+        "title": "Select food",
+        "description": "Choose the exact Kaloricke Tabulky item.",
+        "data": {
+          "food_guid": "Food"
+        }
+      },
+      "quick_food_details": {
+        "title": "Quick food details",
+        "description": "Set the amount and unit that the button should record. The diary date and time are filled from the current Home Assistant time when the button is pressed.",
+        "data": {
+          "title": "Button name",
+          "amount": "Amount",
+          "unit_guid": "Unit",
+          "unit": "Unit",
+          "meal_type": "Meal type"
+        }
+      },
+      "remove_quick_food": {
+        "title": "Remove quick food button",
+        "description": "Remove a configured quick food button.",
+        "data": {
+          "preset_id": "Quick food button"
+        }
       }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Kaloricke Tabulky.",
+      "no_food_found": "No matching food or drink was found."
     }
   },
   "entity": {

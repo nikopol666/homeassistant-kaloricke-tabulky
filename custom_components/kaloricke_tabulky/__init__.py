@@ -46,7 +46,7 @@ from .const import (
 )
 from .coordinator import KalorickeTabulkyCoordinator
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON]
 
 
 def _positive_finite_number(value: float) -> float:

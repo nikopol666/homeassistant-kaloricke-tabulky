@@ -7,6 +7,7 @@ from datetime import timedelta
 DOMAIN = "kaloricke_tabulky"
 
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_QUICK_FOODS = "quick_foods"
 
 DEFAULT_SCAN_INTERVAL = 240
 MIN_SCAN_INTERVAL = 15

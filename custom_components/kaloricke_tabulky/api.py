@@ -9,7 +9,7 @@ from http.cookies import SimpleCookie
 from math import isfinite
 import re
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
 
 from aiohttp import ClientResponse, ClientSession
 
@@ -266,6 +266,21 @@ class KalorickeTabulkyApi:
         if not isinstance(body, list):
             raise KalorickeTabulkyError(f"Unexpected search response: {body}")
         return [_normalize_search_result(item) for item in body if isinstance(item, dict)]
+
+    async def async_get_food_options(
+        self, food_guid: str, target_date: date | None = None
+    ) -> dict[str, Any]:
+        """Return record form metadata for a food item."""
+        request_date = target_date or date.today()
+        form_body = await self._request_with_reauth(
+            "GET",
+            FOOD_FORM_URL.format(guid=food_guid, date=self._format_date(request_date)),
+        )
+        form = form_body.get("data")
+        if not isinstance(form, dict):
+            raise KalorickeTabulkyError(f"Unexpected add form response: {form_body}")
+
+        return _normalize_food_options(form)
 
     async def async_record_food(
         self,
@@ -741,6 +756,21 @@ def _normalize_search_result(item: dict[str, Any]) -> dict[str, Any]:
         "title": item.get("title"),
         "class": item.get("clazz"),
         "url": item.get("url"),
+        "image_url": _first_text(
+            item,
+            (
+                "image",
+                "imageUrl",
+                "image_url",
+                "picture",
+                "pictureUrl",
+                "photo",
+                "photoUrl",
+                "thumbnail",
+                "thumbnailUrl",
+                "thumb",
+            ),
+        ),
         "unit": item.get("unit"),
         "energy": _parse_localized_number(item.get("value")),
         "energy_unit": item.get("energyUnit"),
@@ -749,6 +779,47 @@ def _normalize_search_result(item: dict[str, Any]) -> dict[str, Any]:
         "is_liquid": item.get("isLiquid") if "isLiquid" in item else item.get("liquid"),
         "status": item.get("status"),
     }
+
+
+def _normalize_food_options(form: dict[str, Any]) -> dict[str, Any]:
+    unit_options = [
+        {
+            "id": option.get("id"),
+            "title": option.get("title"),
+            "multiplier": _parse_localized_number(option.get("multiplier")),
+        }
+        for option in form.get("unitOptions") or []
+        if isinstance(option, dict) and option.get("id")
+    ]
+    return {
+        "food_guid": form.get("foodstuffGuid") or form.get("guid") or form.get("id"),
+        "title": form.get("title"),
+        "unit_guid": form.get("unitGuid"),
+        "unit_options": unit_options,
+        "image_url": _first_text(
+            form,
+            (
+                "image",
+                "imageUrl",
+                "image_url",
+                "picture",
+                "pictureUrl",
+                "photo",
+                "photoUrl",
+                "thumbnail",
+                "thumbnailUrl",
+                "thumb",
+            ),
+        ),
+    }
+
+
+def _first_text(item: dict[str, Any], keys: tuple[str, ...]) -> str | None:
+    for key in keys:
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return urljoin("https://www.kaloricketabulky.cz/", value.strip())
+    return None
 
 
 def _meal_type_id(value: str | None) -> str | None:

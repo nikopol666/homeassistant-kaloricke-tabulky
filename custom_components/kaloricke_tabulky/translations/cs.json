@@ -23,11 +23,57 @@
     "step": {
       "init": {
         "title": "Nastavení Kalorických Tabulek",
+        "description": "Správa obnovy senzorů a rychlých tlačítek pro jídlo.",
+        "menu_options": {
+          "general": "Obecné nastavení",
+          "add_quick_food": "Přidat rychlé tlačítko jídla",
+          "remove_quick_food": "Odebrat rychlé tlačítko jídla"
+        }
+      },
+      "general": {
+        "title": "Obecné nastavení",
         "description": "Nastav, jak často má Home Assistant obnovovat senzory. Výchozí hodnota je 240 minut, protože API je neoficiální a tělesná váha se obvykle nemění často.",
         "data": {
           "scan_interval": "Interval obnovy senzorů v minutách"
         }
+      },
+      "add_quick_food": {
+        "title": "Přidat rychlé tlačítko jídla",
+        "description": "Vyhledej v Kalorických Tabulkách potravinu nebo nápoj, který se má zapsat jedním stiskem.",
+        "data": {
+          "query": "Text hledání",
+          "kind": "Typ"
+        }
+      },
+      "select_quick_food": {
+        "title": "Vybrat potravinu",
+        "description": "Vyber přesnou položku z Kalorických Tabulek.",
+        "data": {
+          "food_guid": "Potravina"
+        }
+      },
+      "quick_food_details": {
+        "title": "Detail rychlého jídla",
+        "description": "Nastav množství a jednotku, kterou má tlačítko zapisovat. Datum a čas v deníku se vezmou z aktuálního času Home Assistantu při stisku tlačítka.",
+        "data": {
+          "title": "Název tlačítka",
+          "amount": "Množství",
+          "unit_guid": "Jednotka",
+          "unit": "Jednotka",
+          "meal_type": "Typ jídla"
+        }
+      },
+      "remove_quick_food": {
+        "title": "Odebrat rychlé tlačítko jídla",
+        "description": "Odebere nastavené rychlé tlačítko jídla.",
+        "data": {
+          "preset_id": "Rychlé tlačítko jídla"
+        }
       }
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit ke Kalorickým Tabulkám.",
+      "no_food_found": "Nebyla nalezena žádná odpovídající potravina nebo nápoj."
     }
   },
   "entity": {
