@@ -214,6 +214,7 @@ class SummaryMetricSensor(CoordinatorEntity[KalorickeTabulkyCoordinator], Sensor
             self._attr_name = metric.name
         self._attr_native_unit_of_measurement = _native_unit(metric.unit)
         self._attr_device_class = _device_class(metric.unit)
+        self._attr_state_class = _state_class(metric.unit)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -264,6 +265,7 @@ class KnownSummaryMetricSensor(
         self._attr_translation_key = definition.key
         self._attr_native_unit_of_measurement = _native_unit(definition.unit)
         self._attr_device_class = _device_class(definition.unit)
+        self._attr_state_class = _state_class(definition.unit)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -331,3 +333,12 @@ def _device_class(unit: str | None) -> SensorDeviceClass | None:
     if normalized in VOLUME_UNITS:
         return SensorDeviceClass.VOLUME
     return None
+
+
+def _state_class(unit: str | None) -> SensorStateClass | None:
+    if unit is None:
+        return SensorStateClass.MEASUREMENT
+
+    if unit.strip().lower() in ENERGY_UNITS:
+        return None
+    return SensorStateClass.MEASUREMENT

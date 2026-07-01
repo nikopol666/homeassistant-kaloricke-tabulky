@@ -107,8 +107,12 @@ def _details_schema(
 ) -> vol.Schema:
     schema: dict[Any, Any] = {
         vol.Required("title", default=title): str,
-        vol.Required("amount", default=1.0): vol.All(
-            vol.Coerce(float), _positive_number
+        vol.Required("amount", default=1.0): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0.000001,
+                step="any",
+                mode=selector.NumberSelectorMode.BOX,
+            )
         ),
         vol.Required("meal_type", default=MEAL_TYPE_AUTO): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -410,12 +414,6 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
             self._config_entry.data[CONF_EMAIL],
             self._config_entry.data[CONF_PASSWORD],
         )
-
-
-def _positive_number(value: float) -> float:
-    if value <= 0:
-        raise vol.Invalid("Value must be positive")
-    return value
 
 
 def _search_result_label(item: dict[str, Any]) -> str:

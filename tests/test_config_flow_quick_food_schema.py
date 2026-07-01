@@ -9,6 +9,7 @@ import types
 import unittest
 
 import voluptuous as vol
+import voluptuous_serialize
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -134,6 +135,42 @@ class QuickFoodSelectSchemaTest(unittest.TestCase):
 
     def test_does_not_default_to_first_result(self) -> None:
         self.assertEqual(self.schema({}), {})
+
+
+class QuickFoodDetailsSchemaTest(unittest.TestCase):
+    """Cover Home Assistant frontend schema serialization for details step."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.config_flow = _load_config_flow()
+
+    def test_details_schema_is_serializable_for_frontend(self) -> None:
+        from homeassistant.helpers import config_validation as cv
+
+        schema = self.config_flow._details_schema(
+            title="Test food",
+            unit_options=[{"id": "g", "title": "g", "multiplier": 1}],
+            selected_unit_guid="g",
+        )
+
+        converted = voluptuous_serialize.convert(
+            schema, custom_serializer=cv.custom_serializer
+        )
+
+        fields = {field["name"]: field for field in converted}
+        self.assertEqual(fields["amount"]["selector"]["number"]["mode"], "box")
+        self.assertEqual(fields["amount"]["selector"]["number"]["step"], "any")
+        self.assertGreater(fields["amount"]["selector"]["number"]["min"], 0)
+
+    def test_details_schema_rejects_non_positive_amount(self) -> None:
+        schema = self.config_flow._details_schema(
+            title="Test food",
+            unit_options=[],
+            selected_unit_guid=None,
+        )
+
+        with self.assertRaises(vol.MultipleInvalid):
+            schema({"title": "Test food", "amount": 0, "meal_type": "auto"})
 
 
 if __name__ == "__main__":
