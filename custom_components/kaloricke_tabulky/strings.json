@@ -49,7 +49,7 @@
         "title": "Select food",
         "description": "Choose the exact Kaloricke Tabulky item.",
         "data": {
-          "selected_food": "Food"
+          "food_guid": "Food"
         }
       },
       "quick_food_details": {

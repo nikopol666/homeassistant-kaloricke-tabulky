@@ -80,7 +80,7 @@ def _search_schema() -> vol.Schema:
 def _select_food_schema(results: list[dict[str, Any]]) -> vol.Schema:
     return vol.Schema(
         {
-            vol.Required("selected_food"): selector.SelectSelector(
+            vol.Required("food_guid"): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=[
                         selector.SelectOptionDict(

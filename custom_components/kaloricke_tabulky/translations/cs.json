@@ -49,7 +49,7 @@
         "title": "Vybrat potravinu",
         "description": "Vyber přesnou položku z Kalorických Tabulek.",
         "data": {
-          "selected_food": "Potravina"
+          "food_guid": "Potravina"
         }
       },
       "quick_food_details": {
