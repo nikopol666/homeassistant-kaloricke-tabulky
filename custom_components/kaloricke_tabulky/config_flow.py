@@ -80,7 +80,7 @@ def _search_schema() -> vol.Schema:
 def _select_food_schema(results: list[dict[str, Any]]) -> vol.Schema:
     return vol.Schema(
         {
-            vol.Required("food_guid"): selector.SelectSelector(
+            vol.Required("selected_food"): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=[
                         selector.SelectOptionDict(
@@ -279,7 +279,7 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         """Select the exact food result."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            food_guid = user_input["food_guid"]
+            food_guid = user_input["selected_food"]
             self._selected_result = next(
                 (
                     item
