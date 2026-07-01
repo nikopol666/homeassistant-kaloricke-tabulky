@@ -348,6 +348,10 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
                 "meal_type": None if meal_type == MEAL_TYPE_AUTO else meal_type,
                 "image_url": self._selected_options.get("image_url")
                 or self._selected_result.get("image_url"),
+                "has_image": self._selected_options.get("has_image")
+                or self._selected_result.get("has_image"),
+                "image_class": self._selected_options.get("image_class")
+                or self._selected_result.get("image_class"),
             }
             options = self._current_options
             quick_foods = [

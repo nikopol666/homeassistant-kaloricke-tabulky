@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urljoin
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -48,8 +49,8 @@ class QuickFoodButton(CoordinatorEntity[KalorickeTabulkyCoordinator], ButtonEnti
         self._preset = preset
         self._attr_unique_id = f"{entry.entry_id}_quick_food_{preset['id']}"
         self._attr_name = _preset_name(preset)
-        image_url = preset.get("image_url")
-        if isinstance(image_url, str) and image_url:
+        image_url = _preset_image_url(preset)
+        if image_url is not None:
             self._attr_entity_picture = image_url
 
     @property
@@ -65,6 +66,7 @@ class QuickFoodButton(CoordinatorEntity[KalorickeTabulkyCoordinator], ButtonEnti
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return configured food details for dashboard cards."""
         kind = self._preset.get("kind", "food")
+        image_url = _preset_image_url(self._preset)
         return {
             "food_guid": self._preset.get("food_guid"),
             "title": self._preset.get("title"),
@@ -75,7 +77,9 @@ class QuickFoodButton(CoordinatorEntity[KalorickeTabulkyCoordinator], ButtonEnti
             "item_type": "drink" if kind == "drink" else "food",
             "is_drink": kind == "drink",
             "meal_type": self._preset.get("meal_type") or "auto",
-            "image_url": self._preset.get("image_url"),
+            "image_url": image_url,
+            "has_image": bool(image_url),
+            "image_class": self._preset.get("image_class") or "foodstuff",
         }
 
     async def async_press(self) -> None:
@@ -108,3 +112,21 @@ def _preset_name(preset: dict[str, Any]) -> str:
     if unit:
         return f"{title} {amount_text} {unit}"
     return f"{title} {amount_text}"
+
+
+def _preset_image_url(preset: dict[str, Any]) -> str | None:
+    image_url = preset.get("image_url")
+    if isinstance(image_url, str) and image_url:
+        return image_url
+
+    if preset.get("has_image") is False:
+        return None
+
+    food_guid = preset.get("food_guid")
+    if not food_guid:
+        return None
+    image_class = preset.get("image_class") or "foodstuff"
+    return urljoin(
+        "https://www.kaloricketabulky.cz/",
+        f"/file/image/thumb/{image_class}/{food_guid}",
+    )

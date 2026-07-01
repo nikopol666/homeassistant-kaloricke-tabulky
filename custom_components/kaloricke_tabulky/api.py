@@ -751,26 +751,31 @@ def _search_kind(value: str) -> str:
 
 
 def _normalize_search_result(item: dict[str, Any]) -> dict[str, Any]:
+    image_url = _first_text(
+        item,
+        (
+            "image",
+            "imageUrl",
+            "image_url",
+            "picture",
+            "pictureUrl",
+            "photo",
+            "photoUrl",
+            "thumbnail",
+            "thumbnailUrl",
+            "thumb",
+            "photoThumbGastroPartnerUrl",
+            "photoGastroPartnerUrl",
+        ),
+    ) or _image_url_from_item(item)
     return {
         "food_guid": item.get("id"),
         "title": item.get("title"),
         "class": item.get("clazz"),
         "url": item.get("url"),
-        "image_url": _first_text(
-            item,
-            (
-                "image",
-                "imageUrl",
-                "image_url",
-                "picture",
-                "pictureUrl",
-                "photo",
-                "photoUrl",
-                "thumbnail",
-                "thumbnailUrl",
-                "thumb",
-            ),
-        ),
+        "image_url": image_url,
+        "has_image": bool(image_url or item.get("hasImage")),
+        "image_class": item.get("clazz"),
         "unit": item.get("unit"),
         "energy": _parse_localized_number(item.get("value")),
         "energy_unit": item.get("energyUnit"),
@@ -791,26 +796,31 @@ def _normalize_food_options(form: dict[str, Any]) -> dict[str, Any]:
         for option in form.get("unitOptions") or []
         if isinstance(option, dict) and option.get("id")
     ]
+    image_url = _first_text(
+        form,
+        (
+            "image",
+            "imageUrl",
+            "image_url",
+            "picture",
+            "pictureUrl",
+            "photo",
+            "photoUrl",
+            "thumbnail",
+            "thumbnailUrl",
+            "thumb",
+            "photoThumbGastroPartnerUrl",
+            "photoGastroPartnerUrl",
+        ),
+    ) or _image_url_from_item(form)
     return {
         "food_guid": form.get("foodstuffGuid") or form.get("guid") or form.get("id"),
         "title": form.get("title"),
         "unit_guid": form.get("unitGuid"),
         "unit_options": unit_options,
-        "image_url": _first_text(
-            form,
-            (
-                "image",
-                "imageUrl",
-                "image_url",
-                "picture",
-                "pictureUrl",
-                "photo",
-                "photoUrl",
-                "thumbnail",
-                "thumbnailUrl",
-                "thumb",
-            ),
-        ),
+        "image_url": image_url,
+        "has_image": bool(image_url or form.get("hasImage")),
+        "image_class": form.get("clazz") or "foodstuff",
     }
 
 
@@ -820,6 +830,19 @@ def _first_text(item: dict[str, Any], keys: tuple[str, ...]) -> str | None:
         if isinstance(value, str) and value.strip():
             return urljoin("https://www.kaloricketabulky.cz/", value.strip())
     return None
+
+
+def _image_url_from_item(item: dict[str, Any]) -> str | None:
+    if not item.get("hasImage"):
+        return None
+    image_class = item.get("clazz") or "foodstuff"
+    item_id = item.get("id") or item.get("foodstuffGuid") or item.get("guid")
+    if not image_class or not item_id:
+        return None
+    return urljoin(
+        "https://www.kaloricketabulky.cz/",
+        f"/file/image/thumb/{image_class}/{item_id}",
+    )
 
 
 def _meal_type_id(value: str | None) -> str | None:
