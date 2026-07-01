@@ -93,7 +93,8 @@ def _select_food_schema(results: list[dict[str, Any]]) -> vol.Schema:
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
-        }
+        },
+        extra=vol.ALLOW_EXTRA,
     )
 
 
@@ -279,7 +280,14 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         """Select the exact food result."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            food_guid = user_input["selected_food"]
+            food_guid = user_input.get("selected_food") or user_input.get("food_guid")
+            if not food_guid:
+                errors["base"] = "no_food_found"
+                return self.async_show_form(
+                    step_id="select_quick_food",
+                    data_schema=_select_food_schema(self._search_results),
+                    errors=errors,
+                )
             self._selected_result = next(
                 (
                     item
