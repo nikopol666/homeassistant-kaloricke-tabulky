@@ -78,18 +78,19 @@ def _search_schema() -> vol.Schema:
 
 
 def _select_food_schema(results: list[dict[str, Any]]) -> vol.Schema:
+    options = [
+        selector.SelectOptionDict(
+            value=str(item["food_guid"]),
+            label=_search_result_label(item),
+        )
+        for item in results
+        if item.get("food_guid")
+    ]
     return vol.Schema(
         {
-            vol.Required("food_guid"): selector.SelectSelector(
+            vol.Optional("food_guid"): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=[
-                        selector.SelectOptionDict(
-                            value=str(item["food_guid"]),
-                            label=_search_result_label(item),
-                        )
-                        for item in results
-                        if item.get("food_guid")
-                    ],
+                    options=options,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
@@ -280,7 +281,7 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         """Select the exact food result."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            food_guid = user_input.get("selected_food") or user_input.get("food_guid")
+            food_guid = user_input.get("food_guid") or user_input.get("selected_food")
             if not food_guid:
                 errors["base"] = "no_food_found"
                 return self.async_show_form(
