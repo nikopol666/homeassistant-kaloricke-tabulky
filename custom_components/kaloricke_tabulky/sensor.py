@@ -327,7 +327,7 @@ def _device_class(unit: str | None) -> SensorDeviceClass | None:
 
     normalized = unit.strip().lower()
     if normalized in ENERGY_UNITS:
-        return SensorDeviceClass.ENERGY
+        return None
     if normalized in MASS_UNITS:
         return SensorDeviceClass.WEIGHT
     if normalized in VOLUME_UNITS:
@@ -336,9 +336,4 @@ def _device_class(unit: str | None) -> SensorDeviceClass | None:
 
 
 def _state_class(unit: str | None) -> SensorStateClass | None:
-    if unit is None:
-        return SensorStateClass.MEASUREMENT
-
-    if unit.strip().lower() in ENERGY_UNITS:
-        return None
     return SensorStateClass.MEASUREMENT

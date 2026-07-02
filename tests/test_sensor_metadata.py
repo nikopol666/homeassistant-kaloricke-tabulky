@@ -137,9 +137,17 @@ class SensorMetadataTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.sensor = _load_sensor()
 
-    def test_energy_sensors_do_not_use_measurement_state_class(self) -> None:
-        self.assertIs(self.sensor._device_class("kcal"), self.sensor.SensorDeviceClass.ENERGY)
-        self.assertIsNone(self.sensor._state_class("kcal"))
+    def test_nutrition_energy_sensors_keep_measurement_state_class(self) -> None:
+        self.assertIsNone(self.sensor._device_class("kcal"))
+        self.assertIsNone(self.sensor._device_class("kJ"))
+        self.assertIs(
+            self.sensor._state_class("kcal"),
+            self.sensor.SensorStateClass.MEASUREMENT,
+        )
+        self.assertIs(
+            self.sensor._state_class("kJ"),
+            self.sensor.SensorStateClass.MEASUREMENT,
+        )
 
     def test_non_energy_numeric_sensors_keep_measurement_state_class(self) -> None:
         self.assertIs(
