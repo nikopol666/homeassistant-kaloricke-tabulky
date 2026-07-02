@@ -175,7 +175,21 @@ class _FakeKalorickeTabulkyApi:
                             "multiplier": "-2",
                         }
                     ],
-                    "foodstuff": [],
+                    "foodstuff": [
+                        {
+                            "selected": True,
+                            "count": 100,
+                            "selectedUnitGuid": "g",
+                            "units": [{"id": "g", "title": "1 g", "multiplier": "1"}],
+                        },
+                        {
+                            "selected": True,
+                            "countOriginal": "20",
+                            "count": 20,
+                            "selectedUnitGuid": "g",
+                            "units": [{"id": "g", "title": "1 g", "multiplier": "1"}],
+                        },
+                    ],
                 }
             }
         if "user/recipe/add" in url:
@@ -183,6 +197,8 @@ class _FakeKalorickeTabulkyApi:
             assert payload["date"] == "02.07.2026"
             assert payload["time"] == "12:30"
             assert payload["selectedUnitMultiplier"] == 1
+            assert payload["foodstuff"][0]["count"] == 25
+            assert payload["foodstuff"][1]["count"] == 5
             return {"message": "Úspěšně zapsáno!"}
         raise AssertionError(f"Unexpected request: {method} {url}")
 

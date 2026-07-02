@@ -1070,6 +1070,77 @@ def _apply_recipe_serving_selection(
     if selected is not None:
         payload["selectedUnitGuid"] = selected["id"]
     payload["selectedUnitMultiplier"] = amount
+    _scale_recipe_foodstuff_counts(payload, amount=amount)
+
+
+def _scale_recipe_foodstuff_counts(payload: dict[str, Any], *, amount: float) -> None:
+    units = payload.get("units") or []
+    selected_unit = next(
+        (
+            option
+            for option in units
+            if isinstance(option, dict) and option.get("id") == payload.get("selectedUnitGuid")
+        ),
+        None,
+    )
+    foodstuff = payload.get("foodstuff")
+    if not isinstance(selected_unit, dict) or not isinstance(foodstuff, list):
+        return
+
+    unit_multiplier = _parse_localized_number(selected_unit.get("multiplier"))
+    if unit_multiplier == -2:
+        portions_max = _parse_localized_number(payload.get("portionsMax"))
+        if not portions_max:
+            return
+        factor = amount / portions_max
+    elif unit_multiplier == -1:
+        factor = amount / 100
+    elif unit_multiplier is not None and unit_multiplier > 0:
+        total_weight = sum(
+            _foodstuff_weight(item)
+            for item in foodstuff
+            if isinstance(item, dict) and item.get("selected", True)
+        )
+        if not total_weight:
+            return
+        factor = (amount * unit_multiplier) / total_weight
+    else:
+        return
+
+    for item in foodstuff:
+        if not isinstance(item, dict):
+            continue
+        if not item.get("selected", True):
+            item["count"] = 0
+            continue
+        count = _parse_localized_number(item.get("countOriginal"))
+        if count is None:
+            count = _parse_localized_number(item.get("count"))
+        if count is not None:
+            item["count"] = count * factor
+
+
+def _foodstuff_weight(item: dict[str, Any]) -> float:
+    count = _parse_localized_number(item.get("countOriginal"))
+    if count is None:
+        count = _parse_localized_number(item.get("count")) or 0
+    units = item.get("units") or []
+    selected_unit = next(
+        (
+            option
+            for option in units
+            if isinstance(option, dict) and option.get("id") == item.get("selectedUnitGuid")
+        ),
+        None,
+    )
+    multiplier = (
+        _parse_localized_number(selected_unit.get("multiplier"))
+        if isinstance(selected_unit, dict)
+        else None
+    )
+    if multiplier is None:
+        multiplier = 1
+    return count * multiplier
 
 
 def _validate_amount(amount: float) -> None:
