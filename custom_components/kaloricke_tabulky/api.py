@@ -23,6 +23,8 @@ FOOD_FORM_URL = (
     "https://www.kaloricketabulky.cz/user/foodstuff/add/form/{guid}/{date}/get?format=json"
 )
 RECORD_FOOD_URL = "https://www.kaloricketabulky.cz/user/foodstuff/add?format=json&="
+RECIPE_FORM_URL = "https://www.kaloricketabulky.cz/user/meal/add/form/{guid}?format=json"
+RECORD_RECIPE_URL = "https://www.kaloricketabulky.cz/user/recipe/add?format=json"
 
 SEARCH_KINDS = {
     "food": "foodstuff-meal",
@@ -268,9 +270,22 @@ class KalorickeTabulkyApi:
         return [_normalize_search_result(item) for item in body if isinstance(item, dict)]
 
     async def async_get_food_options(
-        self, food_guid: str, target_date: date | None = None
+        self,
+        food_guid: str,
+        target_date: date | None = None,
+        item_class: str | None = None,
     ) -> dict[str, Any]:
         """Return record form metadata for a food item."""
+        if _is_recipe_class(item_class):
+            form_body = await self._request_with_reauth(
+                "GET",
+                RECIPE_FORM_URL.format(guid=food_guid),
+            )
+            form = form_body.get("data")
+            if not isinstance(form, dict):
+                raise KalorickeTabulkyError(f"Unexpected recipe add form response: {form_body}")
+            return _normalize_recipe_options(form)
+
         request_date = target_date or date.today()
         form_body = await self._request_with_reauth(
             "GET",
@@ -291,6 +306,7 @@ class KalorickeTabulkyApi:
         amount: float | None = None,
         unit: str | None = None,
         unit_guid: str | None = None,
+        item_class: str | None = None,
         target_date: date | None = None,
         target_time: str | None = None,
         meal_type: str | None = None,
@@ -309,6 +325,19 @@ class KalorickeTabulkyApi:
             if search_result is None:
                 raise KalorickeTabulkyError(f"No food result found for query: {query}")
             food_guid = str(search_result["food_guid"])
+            item_class = item_class or search_result.get("class")
+
+        if _is_recipe_class(item_class):
+            return await self._async_record_recipe(
+                recipe_guid=food_guid,
+                amount=amount,
+                unit=unit,
+                unit_guid=unit_guid,
+                target_date=request_date,
+                target_time=target_time,
+                meal_type=meal_type,
+                search_result=search_result,
+            )
 
         form_body = await self._request_with_reauth(
             "GET",
@@ -317,6 +346,17 @@ class KalorickeTabulkyApi:
         form = form_body.get("data")
         if not isinstance(form, dict):
             raise KalorickeTabulkyError(f"Unexpected add form response: {form_body}")
+        if _looks_like_recipe_food_form(form):
+            return await self._async_record_recipe(
+                recipe_guid=food_guid,
+                amount=amount,
+                unit=unit,
+                unit_guid=unit_guid,
+                target_date=request_date,
+                target_time=target_time,
+                meal_type=meal_type,
+                search_result=search_result,
+            )
 
         payload = dict(form)
         payload["date"] = self._format_date(request_date)
@@ -337,6 +377,53 @@ class KalorickeTabulkyApi:
             "unit_guid": payload.get("unitGuid"),
             "multiplier": payload.get("multiplier"),
             "search_result": search_result,
+        }
+
+    async def _async_record_recipe(
+        self,
+        *,
+        recipe_guid: str,
+        amount: float | None,
+        unit: str | None,
+        unit_guid: str | None,
+        target_date: date,
+        target_time: str | None,
+        meal_type: str | None,
+        search_result: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        form_body = await self._request_with_reauth(
+            "GET",
+            RECIPE_FORM_URL.format(guid=recipe_guid),
+        )
+        form = form_body.get("data")
+        if not isinstance(form, dict):
+            raise KalorickeTabulkyError(f"Unexpected recipe add form response: {form_body}")
+
+        payload = dict(form)
+        payload["date"] = self._format_date(target_date)
+        if target_time is not None:
+            payload["timeUser"] = True
+            payload["time"] = target_time
+        payload["diaryTimeGuid"] = _meal_type_id(meal_type) or _meal_type_from_time(target_time)
+        _apply_recipe_serving_selection(payload, amount=amount, unit=unit, unit_guid=unit_guid)
+
+        response = await self._request_with_reauth(
+            "POST",
+            RECORD_RECIPE_URL,
+            json=payload,
+            headers={"Accept": "application/json, text/plain, */*"},
+        )
+        return {
+            "message": response.get("message"),
+            "food_guid": recipe_guid,
+            "title": payload.get("title") or (search_result or {}).get("title"),
+            "date": payload.get("date"),
+            "time": payload.get("time"),
+            "meal_type": payload.get("diaryTimeGuid"),
+            "unit_guid": payload.get("selectedUnitGuid"),
+            "multiplier": payload.get("selectedUnitMultiplier"),
+            "search_result": search_result,
+            "class": "meal",
         }
 
     async def _request_with_reauth(
@@ -824,6 +911,43 @@ def _normalize_food_options(form: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _normalize_recipe_options(form: dict[str, Any]) -> dict[str, Any]:
+    unit_options = [
+        {
+            "id": option.get("id"),
+            "title": option.get("title"),
+            "multiplier": _parse_localized_number(option.get("multiplier")),
+        }
+        for option in form.get("units") or []
+        if isinstance(option, dict) and option.get("id")
+    ]
+    image_url = _first_text(
+        form,
+        (
+            "image",
+            "imageUrl",
+            "image_url",
+            "picture",
+            "pictureUrl",
+            "photo",
+            "photoUrl",
+            "thumbnail",
+            "thumbnailUrl",
+            "thumb",
+        ),
+    )
+    return {
+        "food_guid": form.get("guid") or form.get("id"),
+        "title": form.get("title"),
+        "unit_guid": form.get("selectedUnitGuid"),
+        "unit_options": unit_options,
+        "image_url": image_url,
+        "has_image": bool(image_url or form.get("hasImage")),
+        "image_class": form.get("clazz") or "meal",
+        "item_class": "meal",
+    }
+
+
 def _first_text(item: dict[str, Any], keys: tuple[str, ...]) -> str | None:
     for key in keys:
         value = item.get(key)
@@ -843,6 +967,14 @@ def _image_url_from_item(item: dict[str, Any]) -> str | None:
         "https://www.kaloricketabulky.cz/",
         f"/file/image/thumb/{image_class}/{item_id}",
     )
+
+
+def _is_recipe_class(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"meal", "recipe"}
+
+
+def _looks_like_recipe_food_form(form: dict[str, Any]) -> bool:
+    return not form.get("title") and not form.get("unitGuid")
 
 
 def _meal_type_id(value: str | None) -> str | None:
@@ -911,6 +1043,33 @@ def _apply_unit_selection(
         payload["multiplier"] = amount
     else:
         payload["multiplier"] = amount
+
+
+def _apply_recipe_serving_selection(
+    payload: dict[str, Any],
+    *,
+    amount: float | None,
+    unit: str | None,
+    unit_guid: str | None,
+) -> None:
+    if unit_guid:
+        payload["selectedUnitGuid"] = unit_guid
+        if amount is not None:
+            _validate_amount(amount)
+            payload["selectedUnitMultiplier"] = amount
+        return
+    if amount is None:
+        return
+    _validate_amount(amount)
+    options = [
+        option
+        for option in payload.get("units", [])
+        if isinstance(option, dict) and option.get("id")
+    ]
+    selected = _find_unit_option(options, amount, unit)
+    if selected is not None:
+        payload["selectedUnitGuid"] = selected["id"]
+    payload["selectedUnitMultiplier"] = amount
 
 
 def _validate_amount(amount: float) -> None:

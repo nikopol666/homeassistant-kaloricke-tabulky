@@ -306,7 +306,9 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
             else:
                 try:
                     self._selected_options = await self._api().async_get_food_options(
-                        food_guid, date.today()
+                        food_guid,
+                        date.today(),
+                        self._selected_result.get("class"),
                     )
                 except KalorickeTabulkyError:
                     errors["base"] = "cannot_connect"
@@ -342,6 +344,8 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
                 "title": user_input["title"].strip(),
                 "food_guid": self._selected_result["food_guid"],
                 "kind": self._selected_kind,
+                "item_class": self._selected_options.get("item_class")
+                or self._selected_result.get("class"),
                 "amount": user_input["amount"],
                 "unit": unit,
                 "unit_guid": unit_guid,
