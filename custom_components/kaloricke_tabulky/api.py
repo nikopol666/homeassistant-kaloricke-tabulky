@@ -1118,12 +1118,18 @@ def _scale_recipe_foodstuff_counts(payload: dict[str, Any], *, amount: float) ->
         if count is None:
             count = _parse_localized_number(item.get("count"))
         if count is not None:
-            item["count"] = _recipe_quantity(count * factor)
+            scaled_count = _recipe_quantity(count * factor)
+            item["count"] = scaled_count
+            if "countOriginal" in item:
+                item["countOriginal"] = scaled_count
         unit_count = _parse_localized_number(item.get("unitCountOriginal"))
         if unit_count is None:
             unit_count = _parse_localized_number(item.get("unitCount"))
         if unit_count is not None:
-            item["unitCount"] = _recipe_quantity(unit_count * factor)
+            scaled_unit_count = _recipe_quantity(unit_count * factor)
+            item["unitCount"] = scaled_unit_count
+            if "unitCountOriginal" in item:
+                item["unitCountOriginal"] = scaled_unit_count
 
 
 def _recipe_quantity(value: float) -> float:

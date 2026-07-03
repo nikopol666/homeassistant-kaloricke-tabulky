@@ -237,8 +237,12 @@ class _FakeKalorickeTabulkyApi:
             assert payload["foodstuff"][0]["unitCount"] == 25
             assert payload["foodstuff"][1]["count"] == 5
             assert payload["foodstuff"][1]["unitCount"] == 5
+            assert payload["foodstuff"][1]["countOriginal"] == 5
+            assert payload["foodstuff"][1]["unitCountOriginal"] == 5
             assert payload["foodstuff"][2]["count"] == 0.1
             assert payload["foodstuff"][2]["unitCount"] == 0.1
+            assert payload["foodstuff"][2]["countOriginal"] == 0.1
+            assert payload["foodstuff"][2]["unitCountOriginal"] == 0.1
             return {"message": "Úspěšně zapsáno!"}
         raise AssertionError(f"Unexpected request: {method} {url}")
 
