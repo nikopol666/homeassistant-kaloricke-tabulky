@@ -70,7 +70,8 @@
           "amount": "Amount",
           "unit_guid": "Unit",
           "unit": "Unit",
-          "meal_type": "Meal type"
+          "meal_type": "Meal type",
+          "category": "Category"
         }
       },
       "import_recipes": {

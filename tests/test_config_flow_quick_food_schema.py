@@ -161,6 +161,12 @@ class QuickFoodDetailsSchemaTest(unittest.TestCase):
         self.assertEqual(fields["amount"]["selector"]["number"]["mode"], "box")
         self.assertEqual(fields["amount"]["selector"]["number"]["step"], "any")
         self.assertGreater(fields["amount"]["selector"]["number"]["min"], 0)
+        self.assertIn("category", fields)
+        category_options = fields["category"]["selector"]["select"]["options"]
+        self.assertIn(
+            {"value": "alcohol", "label": "Alcohol"},
+            category_options,
+        )
 
     def test_details_schema_rejects_non_positive_amount(self) -> None:
         schema = self.config_flow._details_schema(
@@ -171,6 +177,24 @@ class QuickFoodDetailsSchemaTest(unittest.TestCase):
 
         with self.assertRaises(vol.MultipleInvalid):
             schema({"title": "Test food", "amount": 0, "meal_type": "auto"})
+
+    def test_details_schema_accepts_alcohol_category(self) -> None:
+        schema = self.config_flow._details_schema(
+            title="Pivo",
+            unit_options=[],
+            selected_unit_guid=None,
+        )
+
+        validated = schema(
+            {
+                "title": "Pivo",
+                "amount": 1,
+                "meal_type": "auto",
+                "category": "alcohol",
+            }
+        )
+
+        self.assertEqual(validated["category"], "alcohol")
 
 
 class UpdateCredentialsSchemaTest(unittest.TestCase):

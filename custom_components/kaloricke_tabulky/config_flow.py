@@ -31,6 +31,11 @@ REMOVE_QUICK_FOOD = "remove_quick_food"
 UPDATE_CREDENTIALS = "update_credentials"
 MEAL_TYPE_AUTO = "auto"
 DEFAULT_RECIPE_PORTION_UNIT_GUID = "0000000000000004"
+QUICK_FOOD_CATEGORY_NONE = "none"
+QUICK_FOOD_CATEGORY_OPTIONS = (
+    (QUICK_FOOD_CATEGORY_NONE, "None"),
+    ("alcohol", "Alcohol"),
+)
 MEAL_TYPE_OPTIONS = (
     (MEAL_TYPE_AUTO, "Automatic by current time"),
     ("breakfast", "Breakfast"),
@@ -133,6 +138,15 @@ def _details_schema(
                 options=[
                     selector.SelectOptionDict(value=value, label=label)
                     for value, label in MEAL_TYPE_OPTIONS
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Required("category", default=QUICK_FOOD_CATEGORY_NONE): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value=value, label=label)
+                    for value, label in QUICK_FOOD_CATEGORY_OPTIONS
                 ],
                 mode=selector.SelectSelectorMode.DROPDOWN,
             )
@@ -396,6 +410,7 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
             unit_guid = user_input.get("unit_guid")
             unit = _unit_title(unit_options, unit_guid) or user_input.get("unit")
             meal_type = user_input.get("meal_type")
+            category = user_input.get("category")
             quick_food = {
                 "id": _preset_id(user_input["title"], self._selected_result["food_guid"]),
                 "title": user_input["title"].strip(),
@@ -407,6 +422,9 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
                 "unit": unit,
                 "unit_guid": unit_guid,
                 "meal_type": None if meal_type == MEAL_TYPE_AUTO else meal_type,
+                "category": None
+                if category in (None, QUICK_FOOD_CATEGORY_NONE)
+                else category,
                 "image_url": self._selected_options.get("image_url")
                 or self._selected_result.get("image_url"),
                 "has_image": self._selected_options.get("has_image")

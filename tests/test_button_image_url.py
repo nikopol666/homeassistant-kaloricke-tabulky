@@ -158,6 +158,24 @@ class ButtonImageUrlTest(unittest.TestCase):
             )
         )
 
+    def test_category_is_exposed_as_button_attribute(self) -> None:
+        button = self.button.QuickFoodButton(
+            types.SimpleNamespace(entry_id="entry", title="Account"),
+            object(),
+            {
+                "id": "pivo",
+                "food_guid": "beer-guid",
+                "title": "Pivo",
+                "amount": 1,
+                "unit": "ks",
+                "kind": "drink",
+                "category": "alcohol",
+            },
+        )
+
+        self.assertEqual(button.extra_state_attributes["category"], "alcohol")
+        self.assertEqual(button.extra_state_attributes["item_type"], "drink")
+
 
 if __name__ == "__main__":
     unittest.main()

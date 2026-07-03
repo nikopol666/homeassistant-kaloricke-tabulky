@@ -70,7 +70,8 @@
           "amount": "Množství",
           "unit_guid": "Jednotka",
           "unit": "Jednotka",
-          "meal_type": "Typ jídla"
+          "meal_type": "Typ jídla",
+          "category": "Kategorie"
         }
       },
       "import_recipes": {

@@ -74,6 +74,7 @@ class QuickFoodButton(CoordinatorEntity[KalorickeTabulkyCoordinator], ButtonEnti
             "unit": self._preset.get("unit"),
             "unit_guid": self._preset.get("unit_guid"),
             "kind": kind,
+            "category": self._preset.get("category"),
             "item_class": self._preset.get("item_class"),
             "item_type": "drink" if kind == "drink" else "food",
             "is_drink": kind == "drink",
