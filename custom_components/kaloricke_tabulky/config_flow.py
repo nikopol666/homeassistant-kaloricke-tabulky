@@ -28,6 +28,7 @@ ADD_QUICK_FOOD = "add_quick_food"
 GENERAL = "general"
 IMPORT_RECIPES = "import_recipes"
 REMOVE_QUICK_FOOD = "remove_quick_food"
+UPDATE_CREDENTIALS = "update_credentials"
 MEAL_TYPE_AUTO = "auto"
 DEFAULT_RECIPE_PORTION_UNIT_GUID = "0000000000000004"
 MEAL_TYPE_OPTIONS = (
@@ -57,6 +58,17 @@ def _options_schema(current_interval: int) -> vol.Schema:
         {
             vol.Required(CONF_SCAN_INTERVAL, default=current_interval): vol.All(
                 vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
+            ),
+        }
+    )
+
+
+def _credentials_schema(email: str) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Required(CONF_EMAIL, default=email): str,
+            vol.Required(CONF_PASSWORD): selector.TextSelector(
+                selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
             ),
         }
     )
@@ -234,7 +246,7 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Manage integration options."""
-        menu_options = [GENERAL, ADD_QUICK_FOOD, IMPORT_RECIPES]
+        menu_options = [GENERAL, UPDATE_CREDENTIALS, ADD_QUICK_FOOD, IMPORT_RECIPES]
         if self._quick_foods:
             menu_options.append(REMOVE_QUICK_FOOD)
         return self.async_show_menu(step_id="init", menu_options=menu_options)
@@ -254,6 +266,45 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id=GENERAL,
             data_schema=_options_schema(current_interval),
+        )
+
+    async def async_step_update_credentials(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Update stored Kaloricke Tabulky credentials."""
+        errors: dict[str, str] = {}
+        current_email = str(self._config_entry.data.get(CONF_EMAIL, "")).strip().lower()
+
+        if user_input is not None:
+            email = user_input[CONF_EMAIL].strip().lower()
+            password = user_input[CONF_PASSWORD]
+            api = KalorickeTabulkyApi(
+                async_get_clientsession(self.hass),
+                email,
+                password,
+            )
+            try:
+                await api.authenticate()
+            except InvalidAuthError:
+                errors["base"] = "invalid_auth"
+            except KalorickeTabulkyError:
+                errors["base"] = "cannot_connect"
+            else:
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry,
+                    title=email,
+                    data={**self._config_entry.data, CONF_EMAIL: email, CONF_PASSWORD: password},
+                )
+                coordinator = getattr(self._config_entry, "runtime_data", None)
+                if coordinator is not None:
+                    coordinator.api = api
+                    await coordinator.async_request_refresh()
+                return self.async_create_entry(title="", data=self._current_options)
+
+        return self.async_show_form(
+            step_id=UPDATE_CREDENTIALS,
+            data_schema=_credentials_schema(current_email),
+            errors=errors,
         )
 
     async def async_step_add_quick_food(
@@ -571,6 +622,14 @@ def _custom_recipe_quick_food(
         or DEFAULT_RECIPE_PORTION_UNIT_GUID
     )
     title = str(recipe_options.get("title") or recipe.get("title") or "Custom recipe")
+    image_url = recipe_options.get("image_url") or recipe.get("image_url")
+    has_image = recipe_options.get("has_image")
+    if has_image is None:
+        has_image = recipe.get("has_image")
+    if image_url:
+        has_image = True
+    elif has_image is False:
+        has_image = None
     return {
         "id": _preset_id(title, recipe_guid),
         "title": title,
@@ -581,8 +640,8 @@ def _custom_recipe_quick_food(
         "unit": _unit_title(unit_options, str(unit_guid)) or "porce",
         "unit_guid": str(unit_guid),
         "meal_type": None,
-        "image_url": recipe_options.get("image_url") or recipe.get("image_url"),
-        "has_image": recipe_options.get("has_image") or recipe.get("has_image"),
+        "image_url": image_url,
+        "has_image": has_image,
         "image_class": recipe_options.get("image_class")
         or recipe.get("image_class")
         or "meal",

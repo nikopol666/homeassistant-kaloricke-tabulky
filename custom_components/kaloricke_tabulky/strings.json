@@ -26,6 +26,7 @@
         "description": "Manage sensor refresh and quick food buttons.",
         "menu_options": {
           "general": "General settings",
+          "update_credentials": "Update login credentials",
           "add_quick_food": "Add quick food button",
           "import_recipes": "Import custom recipe buttons",
           "remove_quick_food": "Remove quick food button"
@@ -36,6 +37,14 @@
         "description": "Set how often Home Assistant should refresh sensors. The default is 240 minutes because the API is unofficial and body weight usually changes slowly.",
         "data": {
           "scan_interval": "Sensor refresh interval in minutes"
+        }
+      },
+      "update_credentials": {
+        "title": "Update login credentials",
+        "description": "Enter the current Kaloricke Tabulky email and password. The new credentials are verified before they are saved.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
         }
       },
       "add_quick_food": {

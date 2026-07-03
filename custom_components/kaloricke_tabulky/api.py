@@ -959,7 +959,7 @@ def _normalize_recipe_options(form: dict[str, Any]) -> dict[str, Any]:
             "thumbnailUrl",
             "thumb",
         ),
-    )
+    ) or _image_url_from_item(form, default_class="meal")
     return {
         "food_guid": form.get("guid") or form.get("id"),
         "title": form.get("title"),
@@ -988,7 +988,7 @@ def _normalize_custom_recipe(item: dict[str, Any]) -> dict[str, Any]:
             "thumbnailUrl",
             "thumb",
         ),
-    )
+    ) or _image_url_from_item(item, default_class="meal")
     return {
         "food_guid": recipe_guid,
         "recipe_guid": recipe_guid,
@@ -1012,10 +1012,12 @@ def _first_text(item: dict[str, Any], keys: tuple[str, ...]) -> str | None:
     return None
 
 
-def _image_url_from_item(item: dict[str, Any]) -> str | None:
+def _image_url_from_item(
+    item: dict[str, Any], *, default_class: str = "foodstuff"
+) -> str | None:
     if not item.get("hasImage"):
         return None
-    image_class = item.get("clazz") or "foodstuff"
+    image_class = item.get("clazz") or default_class
     item_id = item.get("id") or item.get("foodstuffGuid") or item.get("guid")
     if not image_class or not item_id:
         return None

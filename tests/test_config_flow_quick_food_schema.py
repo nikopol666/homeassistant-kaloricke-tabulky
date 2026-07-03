@@ -173,6 +173,22 @@ class QuickFoodDetailsSchemaTest(unittest.TestCase):
             schema({"title": "Test food", "amount": 0, "meal_type": "auto"})
 
 
+class UpdateCredentialsSchemaTest(unittest.TestCase):
+    """Cover password update options-flow schema."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.config_flow = _load_config_flow()
+
+    def test_credentials_schema_defaults_email_and_requires_password(self) -> None:
+        schema = self.config_flow._credentials_schema("tom@example.test")
+
+        validated = schema({"password": "new-password"})
+
+        self.assertEqual(validated["email"], "tom@example.test")
+        self.assertEqual(validated["password"], "new-password")
+
+
 class ImportCustomRecipeButtonsTest(unittest.TestCase):
     """Cover custom recipe quick-button import helpers."""
 
@@ -209,6 +225,36 @@ class ImportCustomRecipeButtonsTest(unittest.TestCase):
         self.assertEqual(imported[0]["amount"], 1.0)
         self.assertEqual(imported[0]["unit"], "porce")
         self.assertEqual(imported[0]["unit_guid"], "portion-guid")
+        self.assertEqual(imported[0]["image_class"], "meal")
+        self.assertIsNone(imported[0]["image_url"])
+        self.assertTrue(imported[0]["has_image"])
+
+    def test_import_keeps_recipe_button_image_fallback_enabled(self) -> None:
+        imported = self.config_flow._import_custom_recipe_buttons(
+            [],
+            [
+                {
+                    "food_guid": "recipe-guid",
+                    "title": "Špenátový krém (Mealie)",
+                    "has_image": False,
+                    "image_class": "meal",
+                }
+            ],
+            {
+                "recipe-guid": {
+                    "title": "Špenátový krém (Mealie)",
+                    "unit_guid": "portion-guid",
+                    "unit_options": [
+                        {"id": "portion-guid", "title": "porce", "multiplier": -2}
+                    ],
+                    "has_image": False,
+                    "image_class": "meal",
+                }
+            },
+        )
+
+        self.assertIsNone(imported[0]["image_url"])
+        self.assertIsNone(imported[0]["has_image"])
         self.assertEqual(imported[0]["image_class"], "meal")
 
     def test_import_skips_existing_recipe_guid(self) -> None:

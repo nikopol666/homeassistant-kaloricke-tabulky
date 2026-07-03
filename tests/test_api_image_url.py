@@ -71,6 +71,46 @@ class ImageUrlNormalizationTest(unittest.TestCase):
         self.assertEqual(result["energy"], 1694)
         self.assertEqual(result["portions"], 4)
 
+    def test_custom_recipe_list_item_builds_meal_thumb_url_from_has_image(self) -> None:
+        result = self.api._normalize_custom_recipe(
+            {
+                "guid": "18ff3bb726de4225b3cafd78a875fbbb",
+                "title": "špenátový krém (Mealie)",
+                "hasImage": True,
+            }
+        )
+
+        self.assertEqual(
+            result["image_url"],
+            "https://www.kaloricketabulky.cz/file/image/thumb/meal/18ff3bb726de4225b3cafd78a875fbbb",
+        )
+        self.assertTrue(result["has_image"])
+        self.assertEqual(result["image_class"], "meal")
+
+    def test_recipe_options_builds_meal_thumb_url_from_has_image(self) -> None:
+        result = self.api._normalize_recipe_options(
+            {
+                "guid": "18ff3bb726de4225b3cafd78a875fbbb",
+                "title": "špenátový krém (Mealie)",
+                "selectedUnitGuid": "portion-guid",
+                "hasImage": True,
+                "units": [
+                    {
+                        "id": "portion-guid",
+                        "title": "porce",
+                        "multiplier": "-2",
+                    }
+                ],
+            }
+        )
+
+        self.assertEqual(
+            result["image_url"],
+            "https://www.kaloricketabulky.cz/file/image/thumb/meal/18ff3bb726de4225b3cafd78a875fbbb",
+        )
+        self.assertTrue(result["has_image"])
+        self.assertEqual(result["image_class"], "meal")
+
     def test_search_result_prefers_explicit_image_url(self) -> None:
         result = self.api._normalize_search_result(
             {
