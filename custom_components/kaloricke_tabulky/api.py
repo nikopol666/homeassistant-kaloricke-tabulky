@@ -1118,12 +1118,17 @@ def _scale_recipe_foodstuff_counts(payload: dict[str, Any], *, amount: float) ->
         if count is None:
             count = _parse_localized_number(item.get("count"))
         if count is not None:
-            item["count"] = count * factor
+            item["count"] = _recipe_quantity(count * factor)
         unit_count = _parse_localized_number(item.get("unitCountOriginal"))
         if unit_count is None:
             unit_count = _parse_localized_number(item.get("unitCount"))
         if unit_count is not None:
-            item["unitCount"] = unit_count * factor
+            item["unitCount"] = _recipe_quantity(unit_count * factor)
+
+
+def _recipe_quantity(value: float) -> float:
+    """Return a KT-safe recipe ingredient quantity."""
+    return round(value, 1)
 
 
 def _foodstuff_weight(item: dict[str, Any]) -> float:
