@@ -1119,6 +1119,11 @@ def _scale_recipe_foodstuff_counts(payload: dict[str, Any], *, amount: float) ->
             count = _parse_localized_number(item.get("count"))
         if count is not None:
             item["count"] = count * factor
+        unit_count = _parse_localized_number(item.get("unitCountOriginal"))
+        if unit_count is None:
+            unit_count = _parse_localized_number(item.get("unitCount"))
+        if unit_count is not None:
+            item["unitCount"] = unit_count * factor
 
 
 def _foodstuff_weight(item: dict[str, Any]) -> float:

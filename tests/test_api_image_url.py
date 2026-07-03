@@ -203,6 +203,7 @@ class _FakeKalorickeTabulkyApi:
                         {
                             "selected": True,
                             "count": 100,
+                            "unitCount": 100,
                             "selectedUnitGuid": "g",
                             "units": [{"id": "g", "title": "1 g", "multiplier": "1"}],
                         },
@@ -210,6 +211,8 @@ class _FakeKalorickeTabulkyApi:
                             "selected": True,
                             "countOriginal": "20",
                             "count": 20,
+                            "unitCountOriginal": "20",
+                            "unitCount": 20,
                             "selectedUnitGuid": "g",
                             "units": [{"id": "g", "title": "1 g", "multiplier": "1"}],
                         },
@@ -222,7 +225,9 @@ class _FakeKalorickeTabulkyApi:
             assert payload["time"] == "12:30"
             assert payload["selectedUnitMultiplier"] == 1
             assert payload["foodstuff"][0]["count"] == 25
+            assert payload["foodstuff"][0]["unitCount"] == 25
             assert payload["foodstuff"][1]["count"] == 5
+            assert payload["foodstuff"][1]["unitCount"] == 5
             return {"message": "Úspěšně zapsáno!"}
         raise AssertionError(f"Unexpected request: {method} {url}")
 
