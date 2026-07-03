@@ -123,6 +123,30 @@ class RecipeServingRecordTest(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
+    async def test_record_recipe_serving_scales_counts_with_explicit_unit_guid(self) -> None:
+        client = _FakeKalorickeTabulkyApi(self.api_module)
+
+        result = await client.async_record_food(
+            food_guid="recipe-guid",
+            item_class="meal",
+            amount=1,
+            unit="porce",
+            unit_guid="portion-guid",
+            target_date=date(2026, 7, 2),
+            target_time="12:30",
+        )
+
+        self.assertEqual(result["message"], "Úspěšně zapsáno!")
+        self.assertEqual(result["unit_guid"], "portion-guid")
+        self.assertEqual(result["multiplier"], 1)
+        self.assertEqual(
+            [call[1] for call in client.calls],
+            [
+                "https://www.kaloricketabulky.cz/user/meal/add/form/recipe-guid?format=json",
+                "https://www.kaloricketabulky.cz/user/recipe/add?format=json",
+            ],
+        )
+
     async def test_record_recipe_serving_falls_back_from_empty_food_form(self) -> None:
         client = _FakeKalorickeTabulkyApi(self.api_module, empty_food_form=True)
 

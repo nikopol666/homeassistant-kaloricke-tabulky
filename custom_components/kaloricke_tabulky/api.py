@@ -1057,6 +1057,7 @@ def _apply_recipe_serving_selection(
         if amount is not None:
             _validate_amount(amount)
             payload["selectedUnitMultiplier"] = amount
+            _scale_recipe_foodstuff_counts(payload, amount=amount)
         return
     if amount is None:
         return
