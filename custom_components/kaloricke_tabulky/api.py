@@ -25,6 +25,7 @@ FOOD_FORM_URL = (
 RECORD_FOOD_URL = "https://www.kaloricketabulky.cz/user/foodstuff/add?format=json&="
 RECIPE_FORM_URL = "https://www.kaloricketabulky.cz/user/meal/add/form/{guid}?format=json"
 RECORD_RECIPE_URL = "https://www.kaloricketabulky.cz/user/recipe/add?format=json"
+CUSTOM_RECIPE_LIST_URL = "https://www.kaloricketabulky.cz/user/settings/meal/list?{query}"
 
 SEARCH_KINDS = {
     "food": "foodstuff-meal",
@@ -296,6 +297,29 @@ class KalorickeTabulkyApi:
             raise KalorickeTabulkyError(f"Unexpected add form response: {form_body}")
 
         return _normalize_food_options(form)
+
+    async def async_list_custom_recipes(
+        self, *, query: str = "", page: int = 0, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Return custom recipes from account settings."""
+        query_string = urlencode(
+            {
+                "format": "json",
+                "page": page,
+                "limit": limit,
+                "query": query,
+            }
+        )
+        body = await self._request_any_with_reauth(
+            "GET", CUSTOM_RECIPE_LIST_URL.format(query=query_string)
+        )
+        if not isinstance(body, dict) or not isinstance(body.get("data"), list):
+            raise KalorickeTabulkyError(f"Unexpected custom recipe list response: {body}")
+        return [
+            _normalize_custom_recipe(item)
+            for item in body["data"]
+            if isinstance(item, dict)
+        ]
 
     async def async_record_food(
         self,
@@ -945,6 +969,38 @@ def _normalize_recipe_options(form: dict[str, Any]) -> dict[str, Any]:
         "has_image": bool(image_url or form.get("hasImage")),
         "image_class": form.get("clazz") or "meal",
         "item_class": "meal",
+    }
+
+
+def _normalize_custom_recipe(item: dict[str, Any]) -> dict[str, Any]:
+    recipe_guid = item.get("guid") or item.get("recipe_guid") or item.get("id")
+    image_url = _first_text(
+        item,
+        (
+            "image",
+            "imageUrl",
+            "image_url",
+            "picture",
+            "pictureUrl",
+            "photo",
+            "photoUrl",
+            "thumbnail",
+            "thumbnailUrl",
+            "thumb",
+        ),
+    )
+    return {
+        "food_guid": recipe_guid,
+        "recipe_guid": recipe_guid,
+        "title": item.get("title"),
+        "energy": _parse_localized_number(item.get("energy")),
+        "energy_unit": item.get("energyUnit") or item.get("energy_unit"),
+        "portions": _parse_localized_number(item.get("portions")),
+        "visibility": item.get("visibility"),
+        "image_url": image_url,
+        "has_image": bool(image_url or item.get("hasImage")),
+        "image_class": item.get("clazz") or "meal",
+        "class": "meal",
     }
 
 

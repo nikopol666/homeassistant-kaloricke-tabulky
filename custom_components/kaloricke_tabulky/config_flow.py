@@ -26,8 +26,10 @@ from .const import (
 
 ADD_QUICK_FOOD = "add_quick_food"
 GENERAL = "general"
+IMPORT_RECIPES = "import_recipes"
 REMOVE_QUICK_FOOD = "remove_quick_food"
 MEAL_TYPE_AUTO = "auto"
+DEFAULT_RECIPE_PORTION_UNIT_GUID = "0000000000000004"
 MEAL_TYPE_OPTIONS = (
     (MEAL_TYPE_AUTO, "Automatic by current time"),
     ("breakfast", "Breakfast"),
@@ -168,6 +170,10 @@ def _remove_schema(quick_foods: list[dict[str, Any]]) -> vol.Schema:
     )
 
 
+def _empty_schema() -> vol.Schema:
+    return vol.Schema({})
+
+
 class KalorickeTabulkyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Kaloricke Tabulky."""
 
@@ -228,7 +234,7 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Manage integration options."""
-        menu_options = [GENERAL, ADD_QUICK_FOOD]
+        menu_options = [GENERAL, ADD_QUICK_FOOD, IMPORT_RECIPES]
         if self._quick_foods:
             menu_options.append(REMOVE_QUICK_FOOD)
         return self.async_show_menu(step_id="init", menu_options=menu_options)
@@ -398,6 +404,49 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
             data_schema=_remove_schema(quick_foods),
         )
 
+    async def async_step_import_recipes(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Import one-portion quick buttons for custom recipes."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api = self._api()
+            try:
+                recipes = await _async_list_all_custom_recipes(api)
+            except KalorickeTabulkyError:
+                errors["base"] = "cannot_connect"
+            else:
+                options = self._current_options
+                recipe_options_by_guid: dict[str, dict[str, Any]] = {}
+                for recipe in recipes:
+                    recipe_guid = recipe.get("food_guid")
+                    if not recipe_guid or _has_quick_food_guid(
+                        options.get(CONF_QUICK_FOODS, []), str(recipe_guid)
+                    ):
+                        continue
+                    try:
+                        recipe_options_by_guid[str(recipe_guid)] = (
+                            await api.async_get_food_options(
+                                str(recipe_guid),
+                                date.today(),
+                                "meal",
+                            )
+                        )
+                    except KalorickeTabulkyError:
+                        continue
+                options[CONF_QUICK_FOODS] = _import_custom_recipe_buttons(
+                    options.get(CONF_QUICK_FOODS, []),
+                    recipes,
+                    recipe_options_by_guid,
+                )
+                return self.async_create_entry(title="", data=options)
+
+        return self.async_show_form(
+            step_id=IMPORT_RECIPES,
+            data_schema=_empty_schema(),
+            errors=errors,
+        )
+
     @property
     def _current_options(self) -> dict[str, Any]:
         options = deepcopy(dict(self._config_entry.options))
@@ -422,6 +471,62 @@ class KalorickeTabulkyOptionsFlow(config_entries.OptionsFlow):
             self._config_entry.data[CONF_EMAIL],
             self._config_entry.data[CONF_PASSWORD],
         )
+
+
+async def _async_list_all_custom_recipes(
+    api: KalorickeTabulkyApi, *, limit: int = 100
+) -> list[dict[str, Any]]:
+    """Read all custom recipe listing pages."""
+    recipes: list[dict[str, Any]] = []
+    page = 0
+    while True:
+        batch = await api.async_list_custom_recipes(page=page, limit=limit)
+        recipes.extend(batch)
+        if len(batch) < limit:
+            return recipes
+        page += 1
+
+
+def _import_custom_recipe_buttons(
+    quick_foods: list[dict[str, Any]],
+    recipes: list[dict[str, Any]],
+    recipe_options_by_guid: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Append one-portion custom recipe buttons that are not already configured."""
+    imported = list(quick_foods)
+    recipe_options_by_guid = recipe_options_by_guid or {}
+    existing_guids = {
+        str(item.get("food_guid"))
+        for item in imported
+        if isinstance(item, dict) and item.get("food_guid")
+    }
+    existing_ids = {
+        str(item.get("id"))
+        for item in imported
+        if isinstance(item, dict) and item.get("id")
+    }
+    for recipe in recipes:
+        recipe_guid = recipe.get("food_guid") or recipe.get("recipe_guid")
+        if not recipe_guid or str(recipe_guid) in existing_guids:
+            continue
+        quick_food = _custom_recipe_quick_food(
+            recipe,
+            recipe_options_by_guid.get(str(recipe_guid)),
+        )
+        if quick_food["id"] in existing_ids:
+            continue
+        imported.append(quick_food)
+        existing_guids.add(str(recipe_guid))
+        existing_ids.add(str(quick_food["id"]))
+    return imported
+
+
+def _has_quick_food_guid(quick_foods: list[dict[str, Any]], food_guid: str) -> bool:
+    """Return whether a quick-food preset for a KT GUID already exists."""
+    return any(
+        isinstance(item, dict) and str(item.get("food_guid")) == food_guid
+        for item in quick_foods
+    )
 
 
 def _search_result_label(item: dict[str, Any]) -> str:
@@ -451,6 +556,44 @@ def _unit_title(options: list[dict[str, Any]], unit_guid: str | None) -> str | N
         if str(option.get("id")) == unit_guid:
             title = option.get("title")
             return str(title) if title else None
+    return None
+
+
+def _custom_recipe_quick_food(
+    recipe: dict[str, Any], recipe_options: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    recipe_options = recipe_options or {}
+    recipe_guid = str(recipe.get("food_guid") or recipe.get("recipe_guid"))
+    unit_options = recipe_options.get("unit_options") or []
+    unit_guid = (
+        recipe_options.get("unit_guid")
+        or _portion_unit_guid(unit_options)
+        or DEFAULT_RECIPE_PORTION_UNIT_GUID
+    )
+    title = str(recipe_options.get("title") or recipe.get("title") or "Custom recipe")
+    return {
+        "id": _preset_id(title, recipe_guid),
+        "title": title,
+        "food_guid": recipe_guid,
+        "kind": "food",
+        "item_class": "meal",
+        "amount": 1.0,
+        "unit": _unit_title(unit_options, str(unit_guid)) or "porce",
+        "unit_guid": str(unit_guid),
+        "meal_type": None,
+        "image_url": recipe_options.get("image_url") or recipe.get("image_url"),
+        "has_image": recipe_options.get("has_image") or recipe.get("has_image"),
+        "image_class": recipe_options.get("image_class")
+        or recipe.get("image_class")
+        or "meal",
+    }
+
+
+def _portion_unit_guid(unit_options: list[dict[str, Any]]) -> str | None:
+    for option in unit_options:
+        title = str(option.get("title") or "").strip().lower()
+        if option.get("id") and "porce" in title:
+            return str(option["id"])
     return None
 
 

@@ -173,5 +173,67 @@ class QuickFoodDetailsSchemaTest(unittest.TestCase):
             schema({"title": "Test food", "amount": 0, "meal_type": "auto"})
 
 
+class ImportCustomRecipeButtonsTest(unittest.TestCase):
+    """Cover custom recipe quick-button import helpers."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.config_flow = _load_config_flow()
+
+    def test_import_creates_one_portion_recipe_button(self) -> None:
+        imported = self.config_flow._import_custom_recipe_buttons(
+            [],
+            [
+                {
+                    "food_guid": "recipe-guid",
+                    "title": "Špenátový krém (Mealie)",
+                    "image_class": "meal",
+                }
+            ],
+            {
+                "recipe-guid": {
+                    "title": "Špenátový krém (Mealie)",
+                    "unit_guid": "portion-guid",
+                    "unit_options": [
+                        {"id": "portion-guid", "title": "porce", "multiplier": -2}
+                    ],
+                    "has_image": True,
+                    "image_class": "meal",
+                }
+            },
+        )
+
+        self.assertEqual(len(imported), 1)
+        self.assertEqual(imported[0]["food_guid"], "recipe-guid")
+        self.assertEqual(imported[0]["item_class"], "meal")
+        self.assertEqual(imported[0]["amount"], 1.0)
+        self.assertEqual(imported[0]["unit"], "porce")
+        self.assertEqual(imported[0]["unit_guid"], "portion-guid")
+        self.assertEqual(imported[0]["image_class"], "meal")
+
+    def test_import_skips_existing_recipe_guid(self) -> None:
+        existing = {
+            "id": "existing",
+            "food_guid": "recipe-guid",
+            "title": "Already here",
+        }
+
+        imported = self.config_flow._import_custom_recipe_buttons(
+            [existing],
+            [{"food_guid": "recipe-guid", "title": "Špenátový krém (Mealie)"}],
+        )
+
+        self.assertEqual(imported, [existing])
+
+    def test_import_falls_back_to_default_portion_unit(self) -> None:
+        imported = self.config_flow._import_custom_recipe_buttons(
+            [],
+            [{"food_guid": "recipe-guid", "title": "Bez detailu"}],
+        )
+
+        self.assertEqual(imported[0]["unit"], "porce")
+        self.assertEqual(imported[0]["unit_guid"], "0000000000000004")
+
+
 if __name__ == "__main__":
     unittest.main()

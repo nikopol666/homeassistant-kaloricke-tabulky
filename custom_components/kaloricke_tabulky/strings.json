@@ -27,6 +27,7 @@
         "menu_options": {
           "general": "General settings",
           "add_quick_food": "Add quick food button",
+          "import_recipes": "Import custom recipe buttons",
           "remove_quick_food": "Remove quick food button"
         }
       },
@@ -62,6 +63,10 @@
           "unit": "Unit",
           "meal_type": "Meal type"
         }
+      },
+      "import_recipes": {
+        "title": "Import custom recipe buttons",
+        "description": "Create one-portion quick food buttons for custom recipes in Kaloricke Tabulky. Existing buttons for the same recipe are skipped."
       },
       "remove_quick_food": {
         "title": "Remove quick food button",

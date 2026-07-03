@@ -27,6 +27,7 @@
         "menu_options": {
           "general": "Obecné nastavení",
           "add_quick_food": "Přidat rychlé tlačítko jídla",
+          "import_recipes": "Importovat tlačítka vlastních receptů",
           "remove_quick_food": "Odebrat rychlé tlačítko jídla"
         }
       },
@@ -62,6 +63,10 @@
           "unit": "Jednotka",
           "meal_type": "Typ jídla"
         }
+      },
+      "import_recipes": {
+        "title": "Importovat tlačítka vlastních receptů",
+        "description": "Vytvoří rychlá tlačítka pro jednu porci vlastních receptů v Kalorických Tabulkách. Existující tlačítka pro stejný recept přeskočí."
       },
       "remove_quick_food": {
         "title": "Odebrat rychlé tlačítko jídla",

@@ -52,6 +52,25 @@ class ImageUrlNormalizationTest(unittest.TestCase):
         self.assertTrue(result["has_image"])
         self.assertEqual(result["image_class"], "foodstuff")
 
+    def test_custom_recipe_list_item_is_normalized_as_meal(self) -> None:
+        result = self.api._normalize_custom_recipe(
+            {
+                "guid": "18ff3bb726de4225b3cafd78a875fbbb",
+                "title": "špenátový krém (Mealie)",
+                "energy": "1694",
+                "energyUnit": "kcal",
+                "portions": "4",
+                "visibility": "private",
+            }
+        )
+
+        self.assertEqual(result["food_guid"], "18ff3bb726de4225b3cafd78a875fbbb")
+        self.assertEqual(result["recipe_guid"], "18ff3bb726de4225b3cafd78a875fbbb")
+        self.assertEqual(result["class"], "meal")
+        self.assertEqual(result["image_class"], "meal")
+        self.assertEqual(result["energy"], 1694)
+        self.assertEqual(result["portions"], 4)
+
     def test_search_result_prefers_explicit_image_url(self) -> None:
         result = self.api._normalize_search_result(
             {
